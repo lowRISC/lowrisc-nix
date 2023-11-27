@@ -14,6 +14,7 @@
         inherit system;
       };
     in {
+      packages = import ./pkgs {inherit pkgs;};
       formatter = pkgs.alejandra;
     });
   in
