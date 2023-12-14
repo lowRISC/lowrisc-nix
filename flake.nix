@@ -2,6 +2,8 @@
 # Licensed under the MIT License, see LICENSE for details.
 # SPDX-License-Identifier: MIT
 {
+  description = "lowRISC CIC's Nix Packages and Environments";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
@@ -22,8 +24,9 @@
       pkgs = import nixpkgs {
         inherit system;
       };
+      lowrisc_pkgs = import ./pkgs {inherit pkgs inputs;};
     in {
-      packages = import ./pkgs {inherit pkgs inputs;};
+      packages = lowrisc_pkgs;
       formatter = pkgs.alejandra;
     });
   in
