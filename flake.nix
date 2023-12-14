@@ -2,6 +2,8 @@
 # Licensed under the MIT License, see LICENSE for details.
 # SPDX-License-Identifier: MIT
 {
+  description = "lowRISC CIC's Nix Packages and Environments";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
@@ -26,11 +28,12 @@
       pkgs = import nixpkgs {
         inherit system;
       };
-    in rec {
-      packages = import ./pkgs {inherit pkgs inputs;};
+      lowrisc_pkgs = import ./pkgs {inherit pkgs inputs;};
+    in {
+      packages = lowrisc_pkgs;
       devShells = {
         opentitan = pkgs.callPackage ./dev/opentitan.nix {
-          inherit (packages) ncurses5-fhs bazel_ot verilator_ot python_ot;
+          inherit (lowrisc_pkgs) ncurses5-fhs bazel_ot verilator_ot python_ot;
         };
       };
       formatter = pkgs.alejandra;
