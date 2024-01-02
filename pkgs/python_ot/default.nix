@@ -59,13 +59,21 @@
       preferWheel = true;
     };
   };
+
+  # Nix wraps python programs which causes PATH to change. We want to keep
+  # PATH in case a program needs to invoke user-defined programs.
+  dontwrap-overlay = final: prev: {
+    fusesoc = prev.fusesoc.overridePythonAttrs {
+      dontWrapPythonPrograms = true;
+    };
+  };
 in
   poetry2nix.mkPoetryEnv {
     projectDir = ./.;
-    python = import ./python.nix {python = python3;};
     overrides = [
       preferwheel-overlay
       buildreqs-overlay
+      dontwrap-overlay
       poetry2nix.defaultPoetryOverrides
     ];
   }
