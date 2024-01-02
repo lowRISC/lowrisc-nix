@@ -18,6 +18,10 @@
     flake-utils,
     ...
   } @ inputs: let
+    no_system_outputs = {
+      poetryOverrides = import ./poetryOverrides.nix;
+    };
+
     all_system_outputs = flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
@@ -27,5 +31,9 @@
       formatter = pkgs.alejandra;
     });
   in
-    all_system_outputs;
+    # Recursive-merge attrsets to compose the final flake outputs attrset.
+    builtins.foldl' nixpkgs.lib.attrsets.recursiveUpdate {} [
+      no_system_outputs
+      all_system_outputs
+    ];
 }
