@@ -19,7 +19,7 @@
     ...
   } @ inputs: let
     no_system_outputs = {
-      poetryOverrides = import ./poetryOverrides.nix;
+      lib.poetryOverrides = import ./lib/poetryOverrides.nix;
     };
 
     all_system_outputs = flake-utils.lib.eachDefaultSystem (system: let
