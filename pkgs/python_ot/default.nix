@@ -8,7 +8,7 @@
   ...
 }: let
   poetry2nix = inputs.poetry2nix.lib.mkPoetry2Nix {inherit pkgs;};
-  poetryOverrides = inputs.self.poetryOverrides {inherit pkgs;};
+  poetryOverrides = inputs.self.lib.poetryOverrides {inherit pkgs;};
 in
   poetry2nix.mkPoetryEnv {
     projectDir = ./.;
