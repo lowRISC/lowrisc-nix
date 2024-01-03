@@ -1,6 +1,7 @@
 {
   pkgs,
   ncurses5-fhs,
+  bazel_ot,
   python_ot,
   verilator_ot,
   edaTools ? [],
@@ -29,8 +30,7 @@ in
     targetPkgs = _:
       with pkgs;
         [
-          bazelisk
-
+          bazel_ot
           python_ot
           verilator_ot
 
