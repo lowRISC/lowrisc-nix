@@ -26,8 +26,13 @@
       pkgs = import nixpkgs {
         inherit system;
       };
-    in {
+    in rec {
       packages = import ./pkgs {inherit pkgs inputs;};
+      devShells = {
+        opentitan = pkgs.callPackage ./dev/opentitan.nix {
+          inherit (packages) ncurses5-fhs verilator_ot python_ot;
+        };
+      };
       formatter = pkgs.alejandra;
     });
   in
