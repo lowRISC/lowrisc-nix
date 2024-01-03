@@ -1,7 +1,7 @@
 # Copyright lowRISC Contributors.
 # Licensed under the MIT License, see LICENSE for details.
 # SPDX-License-Identifier: MIT
-{pkgs, ...}: let
+{nixpkgs, ...}: let
   # https://github.com/nix-community/poetry2nix/blob/master/docs/edgecases.md
   # poetry2nix tries to build the python packages based on the information
   # given in their own build description files (setup.py etc.)
@@ -61,7 +61,7 @@
     };
   };
 in
-  pkgs.lib.composeManyExtensions [
+  nixpkgs.lib.composeManyExtensions [
     preferwheel-overlay
     buildreqs-overlay
     dontwrap-overlay
