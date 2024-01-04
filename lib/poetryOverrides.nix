@@ -43,9 +43,18 @@
       preferWheel = true;
     };
     libcst = prev.libcst.override {
-      # Missing rustc/cargo etc.
-      # buildInputs = (old.buildInputs or []) ++ [ final.setuptools-rust ];
       preferWheel = true;
+      #  }).overridePythonAttrs ( old: {
+      #      # This fix is incomplete, and appears to be due to the issue here:
+      #      # https://github.com/nix-community/poetry2nix/issues/413
+      #      # https://github.com/nix-community/poetry2nix/issues/442
+      #      buildInputs = (old.buildInputs or []) ++ [
+      #        pkgs.rustc
+      #        pkgs.cargo
+      #        # pkgs.rustPlatform.cargoSetupHook
+      #        final.setuptools-rust
+      #      ];
+      #    });
     };
     isort = prev.isort.override {
       # Some problem building due to a malformed semantic version string.
