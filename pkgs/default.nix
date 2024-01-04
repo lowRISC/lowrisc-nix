@@ -9,6 +9,7 @@
 {
   verilator_ot = import ./verilator {inherit pkgs;};
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
+  llvm_cheriot = import ./llvm_cheriot.nix {inherit pkgs;};
 }
 // pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
