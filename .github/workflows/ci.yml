@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+
+      - name: Nix Format Check
+        run: nix fmt -- . --check
+
+      - name: Nix Syntax Check
+        run: nix flake check
+
+  build-plan:
+    # Save some computation. If the checks fail, don't build.
+    needs: checks
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          extra_nix_config: |
+            trusted-public-keys = public:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://hercules.servers.lowrisc.org/nix-cache/public/ https://cache.nixos.org/
+
+      - name: Build and Cache Attic
+        if: github.event_name != 'pull_request'
+        run: |
+          nix profile install github:zhaofengli/attic#attic
+          attic login --set-default lowrisc https://hercules.servers.lowrisc.org/nix-cache/ ${{ secrets.NIX_CACHE_TOKEN }}
+          attic push public $(which attic)
+
+      - name: Generate Build Matrix
+        id: set-matrix
+        run: |
+          matrix="$(nix eval --json .#githubActions.matrix)"
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  build:
+    needs: build-plan
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{fromJSON(needs.build-plan.outputs.matrix)}}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          extra_nix_config: |
+            trusted-public-keys = public:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://hercules.servers.lowrisc.org/nix-cache/public/ https://cache.nixos.org/
+
+      - name: Setup Cache
+        if: github.event_name != 'pull_request'
+        run: |
+          nix profile install github:zhaofengli/attic#attic
+          attic login --set-default lowrisc https://hercules.servers.lowrisc.org/nix-cache/ ${{ secrets.NIX_CACHE_TOKEN }}
+
+      - name: Build
+        run: nix build ".#${{ matrix.attr }}"
+
+      - name: Upload Cache
+        if: github.event_name != 'pull_request'
+        run: |
+          attic push public result/

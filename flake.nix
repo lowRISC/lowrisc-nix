@@ -5,6 +5,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
+    nix-github-actions.url = "github:nix-community/nix-github-actions";
 
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
@@ -20,6 +21,7 @@
   } @ inputs: let
     no_system_outputs = {
       lib.poetryOverrides = import ./lib/poetryOverrides.nix;
+      githubActions = inputs.nix-github-actions.lib.mkGithubMatrix {checks = nixpkgs.lib.getAttrs ["x86_64-linux"] self.packages;};
     };
 
     all_system_outputs = flake-utils.lib.eachDefaultSystem (system: let
