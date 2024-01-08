@@ -14,6 +14,12 @@
       inputs.flake-utils.follows = "flake-utils";
     };
   };
+
+  nixConfig = {
+    extra-substituters = ["https://nix-cache.lowrisc.org/public/"];
+    extra-trusted-public-keys = ["nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o="];
+  };
+
   outputs = {
     self,
     nixpkgs,

@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  checks:
+    name: Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+
+      - name: Nix Format Check
+        run: nix fmt -- . --check
+
+      - name: Nix Syntax Check
+        run: nix flake check
+
+  build-plan:
+    # Save some computation. If the checks fail, don't build.
+    needs: checks
+    name: Generate Build Plan
+    runs-on: ubuntu-latest
+    outputs:
+      attrs: ${{ steps.plan.outputs.ATTRS }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          nix_path: nixpkgs=channel:nixos-23.11
+          extra_nix_config: |
+            substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
+            trusted-public-keys = nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      # Attic is not in nixpkgs currently, so it's not in NixOS cache. In case it's also not in our cache,
+      # we want to avoid having to build it for every job. Do a build ahead of time and cache attic itself.
+      - name: Build and Cache Attic
+        if: github.event_name != 'pull_request'
+        run: |
+          nix profile install github:zhaofengli/attic#attic
+          attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
+          attic push public $(which attic)
+
+      - name: Generate Build Plan
+        id: plan
+        run: |
+          REBUILD=()
+          echo '| Package | Status |' >> $GITHUB_STEP_SUMMARY
+          echo '|---------|--------|' >> $GITHUB_STEP_SUMMARY
+
+          for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --check-cache-status --flake .#packages.x86_64-linux'); do
+            ATTR=$(echo "$LINE" | jq -r .attr)
+            if echo "$LINE" | jq -e .isCached > /dev/null; then
+              echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+            else
+              REBUILD+=($ATTR)
+              echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo 'ATTRS<<EOF' >> $GITHUB_OUTPUT
+          jq --null-input '$ARGS.positional' --args -- "${REBUILD[@]}" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+  build:
+    needs: build-plan
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        attr: ${{fromJSON(needs.build-plan.outputs.attrs)}}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          extra_nix_config: |
+            substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
+            trusted-public-keys = nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Setup Cache
+        if: github.event_name != 'pull_request'
+        run: |
+          nix profile install github:zhaofengli/attic#attic
+          attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
+
+      - name: Build
+        run: nix build ".#${{ matrix.attr }}" --accept-flake-config
+
+      - name: Upload Cache
+        if: github.event_name != 'pull_request'
+        run: |
+          attic push public result/
