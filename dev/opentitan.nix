@@ -8,6 +8,7 @@
   wrapCCWith,
   gcc-unwrapped,
   pkg-config,
+  extraPkgs ? [],
   ...
 }: let
   edaExtraDeps = with pkgs; [elfutils openssl];
@@ -61,7 +62,8 @@ in
           tool.override {
             extraDependencies = edaExtraDeps;
           })
-        edaTools;
+        edaTools
+        ++ extraPkgs;
     extraOutputsToInstall = ["dev"];
 
     extraBwrapArgs = [
