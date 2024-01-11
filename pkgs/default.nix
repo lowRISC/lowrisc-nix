@@ -13,6 +13,7 @@
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
   llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
+  ibex-cosim = pkgs.callPackage ./ibex-cosim.nix {};
 }
 // pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
