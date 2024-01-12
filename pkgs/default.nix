@@ -12,8 +12,7 @@
   verilator_ot = import ./verilator {inherit pkgs;};
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
-  ibex-cosim = pkgs.callPackage ./ibex-cosim.nix {};
-
+  spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
   llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
   xmake = import ./xmake.nix {inherit pkgs;};
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
