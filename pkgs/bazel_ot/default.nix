@@ -1,3 +1,6 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
 {
   runCommand,
   bazelisk,

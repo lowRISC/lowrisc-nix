@@ -1,3 +1,7 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
+
 [tool.poetry]
 name = "opentitan"
 version = "0.1.0"
