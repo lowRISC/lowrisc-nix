@@ -36,6 +36,21 @@
       };
       lowrisc_pkgs = import ./pkgs {inherit pkgs inputs;};
     in {
+      checks = {
+        license = pkgs.stdenv.mkDerivation {
+          name = "license-check";
+          src = ./.;
+          dontBuild = true;
+          doCheck = true;
+          nativeBuildInputs = with pkgs; [reuse];
+          checkPhase = ''
+            reuse lint
+          '';
+          installPhase = ''
+            mkdir $out
+          '';
+        };
+      };
       packages = lowrisc_pkgs;
       devShells = {
         opentitan = pkgs.callPackage ./dev/opentitan.nix {
