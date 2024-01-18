@@ -24,8 +24,8 @@ jobs:
       - name: Nix Format Check
         run: nix fmt -- . --check
 
-      - name: Nix Syntax Check
-        run: nix flake check
+      - name: Run Nix Checks
+        run: nix flake check -L
 
   build-plan:
     # Save some computation. If the checks fail, don't build.
@@ -106,4 +106,4 @@ jobs:
       - name: Upload Cache
         if: github.event_name != 'pull_request'
         run: |
-          attic push public result/
+          attic push public result*
