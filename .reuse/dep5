@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: flake.lock
+       pkgs/python_ot/poetry.lock
+       pkgs/verilator/fix.patch
+       README.md
+Copyright: lowRISC contributors
+License: MIT
