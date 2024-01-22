@@ -59,16 +59,22 @@ jobs:
         id: plan
         run: |
           REBUILD=()
-          echo '| Package | Status |' >> $GITHUB_STEP_SUMMARY
-          echo '|---------|--------|' >> $GITHUB_STEP_SUMMARY
+          echo '| Package | Outputs | Status |' >> $GITHUB_STEP_SUMMARY
+          echo '|---------|---------|--------|' >> $GITHUB_STEP_SUMMARY
 
           for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --check-cache-status --flake .#packages.x86_64-linux'); do
             ATTR=$(echo "$LINE" | jq -r .attr)
+            OUTPUTS=$(echo "$LINE" | jq -r '.outputs | keys | join(",")')
             if echo "$LINE" | jq -e .isCached > /dev/null; then
-              echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+              echo "| $ATTR | $OUTPUTS | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
             else
-              REBUILD+=($ATTR)
-              echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
+              if [[ "$OUTPUTS" = *,* ]]; then
+                # If the derivation has multiple outputs, ensure that they're all built and cached
+                REBUILD+=($ATTR.\{$OUTPUTS\})
+              else
+                REBUILD+=($ATTR)
+              fi
+              echo "| $ATTR | $OUTPUTS | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
             fi
           done
 
@@ -101,7 +107,7 @@ jobs:
           attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
 
       - name: Build
-        run: nix build ".#${{ matrix.attr }}" --accept-flake-config
+        run: nix build .#${{ matrix.attr }} --accept-flake-config
 
       - name: Upload Cache
         if: github.event_name != 'pull_request'
