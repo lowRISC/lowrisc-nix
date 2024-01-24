@@ -86,6 +86,8 @@ jobs:
     needs: build-plan
     name: Build
     runs-on: ubuntu-latest
+    # Matrix can't be empty, so skip the job entirely if nothing needs to be rebuilt.
+    if: fromJSON(needs.build-plan.outputs.attrs)[0] != null
     strategy:
       matrix:
         attr: ${{fromJSON(needs.build-plan.outputs.attrs)}}
