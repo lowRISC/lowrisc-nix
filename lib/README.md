@@ -3,7 +3,7 @@
 ## The Documentation Library
 
 The `doc` library contains `buildMdbookSite`, which is a helper function for creating mdBook site builds.
-An example of it's use is below.
+An example of its use is below.
 
 ```nix
 let
@@ -25,6 +25,7 @@ in {
 }
 ```
 
-*Note: `pkgs.mdbook` is not required in nativeBuildInputs.*
+Notice, that `pkgs.mdbook` doesn't need to be given as part of the `nativeBuildInputs`, so one only needs to provide dependencies of preprocessors run by mdBook.
+In this case, just python.
 
 `standardMdbookFileset` and `hasExts` are also provided to further help in creating derivations.
