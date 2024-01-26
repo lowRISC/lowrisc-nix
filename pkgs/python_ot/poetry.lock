@@ -440,7 +440,7 @@ description = "FuseSoC is a package manager and a set of build tools for HDL (Ha
 optional = false
 python-versions = ">=3.6, <4"
 files = [
-    {file = "ot-0.4.zip", hash = "sha256:a41fca0d3d7c3ec6bd0fa82b4834886497dd7a49ca07700a4d85963a23a59340"},
+    {file = "ot-0.5.zip", hash = "sha256:2b9e29adc09b61e00c8f6246274a937a0f13fe940f1362f12788a6246b3cc4c7"},
 ]
 
 [package.dependencies]
@@ -451,7 +451,7 @@ simplesat = ">=0.8.0"
 
 [package.source]
 type = "url"
-url = "https://github.com/lowRISC/fusesoc/archive/refs/tags/ot-0.4.zip"
+url = "https://github.com/lowRISC/fusesoc/archive/refs/tags/ot-0.5.zip"
 
 [[package]]
 name = "gitdb"
@@ -1658,4 +1658,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5fe23c69a9486c709fab2a38c78f281f2601119fcfca3b23a45302847c7cabc0"
+content-hash = "8cb36ff64b52713f2af7843a40887687aefd83cee3af511ed9298783581c3e44"
