@@ -10,6 +10,13 @@ on:
   pull_request:
     branches: ["main"]
 
+# Cancel existing runs if a pull request is pushed.
+# For branch pushes, this will queue a new run and cancel the existing one. This allows the cache
+# of the run to be used by the new run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   checks:
     name: Quality Check
