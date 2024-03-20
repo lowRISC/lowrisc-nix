@@ -16,8 +16,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "CHERIoT-Platform";
     repo = "llvm-project";
-    rev = "dfbd2b1fdd33746ca9e615feb7852013e8f3966a";
-    hash = "sha256-L0ska5LVv5bUQuA4B8JW5xL156xyJw+2asDR8VA31Fw=";
+    rev = "08a91532cb502a4b575b77d8eb62b1d1862b0c4b";
+    hash = "sha256-kEhX6WsHNV+yvM278hTkssGROw9i4KlbDgi5epw7Ns0=";
   };
   sourceRoot = "${src.name}/llvm";
   nativeBuildInputs = [cmake ninja lld python3];
