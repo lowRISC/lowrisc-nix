@@ -59,6 +59,16 @@
         opentitan = pkgs.callPackage ./dev/opentitan.nix {
           inherit (lowrisc_pkgs) ncurses5-fhs bazel_ot verilator_ot python_ot;
         };
+        cheriot = pkgs.mkShell {
+          name = "cheriot";
+          packages =
+            (with lowrisc_pkgs; [llvm_cheriot xmake])
+            ++ (with pkgs; [
+              gnumake
+              magic-enum
+              srecord
+            ]);
+        };
       };
       formatter = pkgs.alejandra;
     });
