@@ -69,10 +69,20 @@ jobs:
           echo '| Package | Outputs | Status |' >> $GITHUB_STEP_SUMMARY
           echo '|---------|---------|--------|' >> $GITHUB_STEP_SUMMARY
 
-          for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --check-cache-status --flake .#packages.x86_64-linux'); do
+          for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --flake .#packages.x86_64-linux'); do
             ATTR=$(echo "$LINE" | jq -r .attr)
             OUTPUTS=$(echo "$LINE" | jq -r '.outputs | keys | join(",")')
-            if echo "$LINE" | jq -e .isCached > /dev/null; then
+
+            # Check if all outputs are cached. We don't use nix-eval-jobs's cache check because it also includes local path
+            CACHED=y
+            for OUTPUT in ${OUTPUTS//,/ }; do
+              HASH=$(echo "$LINE" | jq -r ".outputs.$OUTPUT" | cut -d '/' -f4 | cut -d '-' -f1)
+              if ! curl -sSfL "https://nix-cache.lowrisc.org/public/$HASH.narinfo"; then
+                CACHED=n
+              fi
+            done
+
+            if [[ $CACHED == y ]]; then
               echo "| $ATTR | $OUTPUTS | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
             else
               if [[ "$OUTPUTS" = *,* ]]; then
