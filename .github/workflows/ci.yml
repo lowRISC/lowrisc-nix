@@ -20,7 +20,7 @@ concurrency:
 jobs:
   checks:
     name: Quality Check
-    runs-on: ubuntu-latest
+    runs-on: nixos-23.11
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
     # Save some computation. If the checks fail, don't build.
     needs: checks
     name: Generate Build Plan
-    runs-on: ubuntu-latest
+    runs-on: nixos-23.11
     outputs:
       attrs: ${{ steps.plan.outputs.ATTRS }}
     steps:
@@ -102,7 +102,7 @@ jobs:
   build:
     needs: build-plan
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: nixos-23.11
     # Matrix can't be empty, so skip the job entirely if nothing needs to be rebuilt.
     if: fromJSON(needs.build-plan.outputs.attrs)[0] != null
     strategy:
