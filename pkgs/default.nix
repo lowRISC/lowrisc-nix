@@ -22,6 +22,7 @@
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
 
   container-hotplug = pkgs.callPackage ./container-hotplug {};
+  surfer = pkgs.callPackage ./surfer/default.nix {};
 }
 // pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
