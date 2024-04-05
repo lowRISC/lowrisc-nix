@@ -6,5 +6,6 @@ Files: flake.lock
        pkgs/verilator/fix.patch
        README.md
        **/README.md
+       pkgs/surfer/Cargo.lock
 Copyright: lowRISC contributors
 License: MIT
