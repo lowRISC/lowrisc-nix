@@ -7,6 +7,7 @@
   bazel_ot,
   python_ot,
   verilator_ot,
+  verible_ot,
   edaTools ? [],
   wrapCCWith,
   gcc-unwrapped,
@@ -38,6 +39,7 @@ in
           bazel_ot
           python_ot
           verilator_ot
+          verible_ot
 
           # For serde-annotate which can be built with just cargo
           rustup
