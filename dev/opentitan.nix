@@ -82,5 +82,7 @@ in
       "--symlink ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf"
       "--symlink /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem"
     ];
+
+    runScript = "\${SHELL:-bash}";
   })
   .env
