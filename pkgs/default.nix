@@ -8,6 +8,7 @@
 }:
 {
   ncurses5-fhs = pkgs.callPackage ./ncurses5-fhs.nix {};
+  fpga-udev-rules = pkgs.callPackage ./fpga-udev-rules {};
 
   # OpenTitan packages
   verilator_ot = import ./verilator {inherit pkgs;};

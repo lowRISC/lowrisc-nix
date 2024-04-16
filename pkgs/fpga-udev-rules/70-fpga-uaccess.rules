@@ -1,0 +1,24 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
+
+# Most FPGA rules set mode to 666 makes it globally writable, and this is not secure. Ubuntu uses a plugdev group,
+# which is considered a bad practice by Arch Linux and systemd developers.
+# See https://wiki.archlinux.org/title/Udev and https://bugzilla.redhat.com/show_bug.cgi?id=815093.
+#
+# The modern approach is to first, identify which type a device is, and then assign it to a specific group (e.g.
+# disk, cdrom, dialout) or set the "uaccess" tag. "uaccess" tag allows all users with seats allocated (i.e. have physical
+# access) to access the device with dynamic ACL. This is both zero-configuration and more secure.
+#
+# We replicate this approach and have FPGA rules that just set an identification tag, and this file will give it "uaccess"
+# flag. The identication rules should have priority between 61 and 69 so they takes priority over systemd-provided device
+# identiciation rules which all uses 60- prefix, and before this rule.
+#
+# This rule uses 70- priority which matches systemd 70-uaccess.rules, and it must be smaller than 73-seat-late.rules.
+
+# We do not set group here becuase `plugdev` group is non-standard, and as mentioned above, discouraged.
+# For FPGA machines that need user to SSH into them to use, one can add another rule like:
+# ```
+# ACTION="add|change", ENV{ID_FPGA}=="1", GROUP="plugdev", MODE="0660"
+# ```
+ACTION=="add|change", ENV{ID_FPGA}=="1", TAG+="uaccess"

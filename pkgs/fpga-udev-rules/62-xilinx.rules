@@ -1,0 +1,27 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
+
+# This list is taken from xilinx UG973.
+# * https://docs.amd.com/r/en-US/ug973-vivado-release-notes-install-license/Installing-Cable-Drivers
+# * https://digilent.com/reference/programmable-logic/guides/install-cable-drivers
+
+# 52-xilinx-digilent-usb.rules
+
+ATTRS{idVendor}=="1443", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="0403", ATTRS{manufacturer}=="Digilent", ENV{ID_FPGA}="1"
+
+# 52-xilinx-ftdi-usb.rules
+
+ATTRS{idVendor}=="0403", ATTRS{manufacturer}=="Xilinx", ENV{ID_FPGA}="1"
+
+# 52-xilinx-pcusb.rules
+
+# These rules are changed from `ATTR` to `ATTRS`, see https://support.xilinx.com/s/question/0D52E000074LyuDSAS/bug-udev-rules-badly-written
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="0008", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="0007", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="0009", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="000d", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="000f", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="0013", ENV{ID_FPGA}="1"
+ATTRS{idVendor}=="03fd", ATTRS{idProduct}=="0015", ENV{ID_FPGA}="1"
