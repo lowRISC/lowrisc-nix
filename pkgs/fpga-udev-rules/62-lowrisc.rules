@@ -1,0 +1,34 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
+
+# This list is taken from the OpenTitan documentation
+# * https://opentitan.org/book/doc/getting_started/install_vivado/index.html?highlight=udev#device-permissions-udev-rules
+# and HyperDebug documentation
+# * https://github.com/lowRISC/hyperdebug-firmware/blob/main/90-hyperdebug.rules
+
+# 90-lowrisc.rules
+
+# NewAE Technology Inc. ChipWhisperer boards e.g. CW310, CW305, CW-Lite, CW-Husky
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", ENV{ID_FPGA}="1"
+
+# Digilent rule removed because it's covered by Xilinx rules.
+
+# Future Technology Devices International, Ltd FT232 Serial (UART) IC
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ENV{ID_FPGA}="1"
+
+# Future Technology Devices International, Ltd FT4232H Quad HS USB-UART/FIFO IC
+# used on the CW340
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6011", ENV{ID_FPGA}="1"
+
+# HyperDebug
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="520e", ENV{ID_FPGA}="1"
+
+# HyperDebug DFU (actually, any ST microcontroller in DFU mode)
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", ENV{ID_FPGA}="1"
+
+# Olimex ARM-USB-TINY-H
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="15ba", ATTRS{idProduct}=="002a", ENV{ID_FPGA}="1"
+
+# USB device under test: uses Google as VID and a google allocated PID
+SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="503a", ENV{ID_FPGA}="1"
