@@ -24,6 +24,8 @@
 
   container-hotplug = pkgs.callPackage ./container-hotplug {};
   surfer = pkgs.callPackage ./surfer/default.nix {};
+
+  riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
 }
 // pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
