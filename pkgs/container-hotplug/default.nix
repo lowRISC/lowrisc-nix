@@ -42,4 +42,11 @@ stdenv.mkDerivation rec {
   postInstall = ''
     wrapProgram $out/bin/container-hotplug --prefix PATH : "${lib.makeBinPath [runc]}"
   '';
+
+  meta = {
+    description = "Hot-plug devices into a container as they are plugged";
+    homepage = "https://github.com/lowRISC/container-hotplug";
+    license = lib.licenses.asl20;
+    mainProgram = "container-hotplug";
+  };
 }
