@@ -13,10 +13,10 @@
 # We currently fetch from container-hotplug directly due to complexity in building bpf-linker.
 stdenv.mkDerivation rec {
   name = "container-hotplug";
-  version = "20240319-2";
+  version = "20240513-1";
   src = fetchurl {
     url = "https://github.com/lowRISC/container-hotplug/releases/download/${version}/container-hotplug";
-    sha256 = "sha256-1LWPYssU4HGw4C85mKq/lFtfQMhtexA2Qc87j4OIh0Y=";
+    hash = "sha256-EwOaxpc5aJt+lMoz4emfOYH0+kQFaHJFAXfXFjb1r5A=";
   };
 
   buildInputs = [
