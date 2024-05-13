@@ -6,8 +6,9 @@
   stdenv,
   lib,
   udev,
-  docker,
-  makeWrapper,
+  runc,
+  # This must be makeBinaryWrapper since podman will refuse to execute a script
+  makeBinaryWrapper,
   autoPatchelfHook,
 }:
 # We currently fetch from container-hotplug directly due to complexity in building bpf-linker.
@@ -24,7 +25,7 @@ stdenv.mkDerivation rec {
     stdenv.cc.cc.lib
   ];
 
-  nativeBuildInputs = [makeWrapper autoPatchelfHook];
+  nativeBuildInputs = [makeBinaryWrapper autoPatchelfHook];
 
   dontUnpack = true;
   dontConfigure = true;
@@ -39,6 +40,6 @@ stdenv.mkDerivation rec {
   '';
 
   postInstall = ''
-    wrapProgram $out/bin/container-hotplug --prefix PATH : "${lib.makeBinPath [docker]}"
+    wrapProgram $out/bin/container-hotplug --prefix PATH : "${lib.makeBinPath [runc]}"
   '';
 }
