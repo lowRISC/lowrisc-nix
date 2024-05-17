@@ -24,6 +24,7 @@
 
   container-hotplug = pkgs.callPackage ./container-hotplug {};
   surfer = pkgs.callPackage ./surfer/default.nix {};
+  uf2conv = pkgs.callPackage ./uf2conv.nix {};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
 }
