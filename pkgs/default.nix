@@ -19,7 +19,7 @@
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
   llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
-  xmake = import ./xmake.nix {inherit pkgs;};
+  xmake = pkgs.callPackage ./xmake {};
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
 
   container-hotplug = pkgs.callPackage ./container-hotplug {};
