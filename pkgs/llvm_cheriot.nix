@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 {
   stdenv,
+  darwin,
   fetchFromGitHub,
   lib,
   cmake,
@@ -20,7 +21,7 @@ stdenv.mkDerivation rec {
     hash = "sha256-Eib8r4jm3zZgWJIV5n+AX0g5rU8OdFud5eOErJ+1iT4=";
   };
   sourceRoot = "${src.name}/llvm";
-  nativeBuildInputs = [cmake ninja lld python3];
+  nativeBuildInputs = [cmake ninja lld python3] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.libs.xpc;
   cmakeFlags = with lib; [
     (cmakeFeature "LLVM_TARGETS_TO_BUILD" "RISCV")
     (cmakeFeature "LLVM_ENABLE_PROJECTS" "clang;clang-tools-extra;lld")
