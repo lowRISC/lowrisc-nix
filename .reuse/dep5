@@ -1,11 +1,9 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
-Files: flake.lock
-       pkgs/python_ot/poetry.lock
+Files: *.lock
+       *.patch
        pkgs/python_ot/poetry-git-overlay.nix
-       pkgs/verilator/fix.patch
        README.md
        **/README.md
-       pkgs/surfer/Cargo.lock
 Copyright: lowRISC contributors
 License: MIT
