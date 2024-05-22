@@ -15,8 +15,8 @@
   extraPkgs ? [],
   ...
 }: let
-  # These dependencies are required for building user DPI C/C++ code.
-  edaExtraDeps = with pkgs; [elfutils openssl];
+  # These dependencies are required for building user DPI C/C++ code, and cosimulation models.
+  edaExtraDeps = with pkgs; [elfutils openssl python_ot];
 
   # Bazel rules_rust expects build PIE binary in opt build but doesn't request PIE/PIC, so force PIC
   gcc-patched = wrapCCWith {
@@ -44,10 +44,17 @@ in
           # For serde-annotate which can be built with just cargo
           rustup
 
+          # For the OTBN simulator
+          ninja
+
+          # dvsim uses git for logging/tagging purposes
+          git
+
           # Bazel downloads Rust compilers which are not patchelfed and they need this.
           zlib
           openssl
           curl
+          util-linux # flock for bazelisk
 
           gcc-patched
           pkg-config-patched
