@@ -25,7 +25,7 @@ verible.override (prev: {
         };
 
         fetchAttrs = {
-          sha256 = "sha256-mLW7gg0+6W/Lt1/Egg0RTFcHvy+DzlHJ3gGOl4D65jE=";
+          sha256 = "sha256-bKASgc5KftCWtMvJkGA4nweBAtgdnyC9uXIJxPjKYS0=";
         };
 
         patches = [];
