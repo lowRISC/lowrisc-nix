@@ -47,6 +47,7 @@ stdenv.mkDerivation rec {
     description = "Hot-plug devices into a container as they are plugged";
     homepage = "https://github.com/lowRISC/container-hotplug";
     license = lib.licenses.asl20;
+    platforms = lib.platforms.linux;
     mainProgram = "container-hotplug";
   };
 }

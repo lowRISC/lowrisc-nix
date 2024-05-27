@@ -5,6 +5,7 @@
   runCommand,
   ncurses5,
   patchelf,
+  lib,
   ...
 }:
 # If SONAME is specified, lookup cache files created by ldconfig will only use the SONAME and will ignore
@@ -12,6 +13,7 @@
 # with proper SONAME.
 runCommand "ncurses5" {
   outputs = ["out" "dev" "man"];
+  meta.platforms = lib.platforms.linux;
 } ''
   cp -r ${ncurses5} $out
   chmod +w $out/lib
