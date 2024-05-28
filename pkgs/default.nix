@@ -21,6 +21,7 @@
   llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
   xmake = pkgs.callPackage ./xmake {};
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
+  cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
 
   container-hotplug = pkgs.callPackage ./container-hotplug {};
   surfer = pkgs.callPackage ./surfer/default.nix {};
