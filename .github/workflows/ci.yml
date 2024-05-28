@@ -68,19 +68,6 @@ jobs:
           fi
 
           for SYSTEM in "${SYSTEMS[@]}"; do
-            # Choose a GitHub runner for the given system.
-            case $SYSTEM in
-              x86_64-linux)
-                RUNNER=nixos-23.11
-                ;;
-              x86_64-darwin)
-                RUNNER=macos-13
-                ;;
-              aarch64-darwin)
-                RUNNER=macos-14
-                ;;
-            esac
-
             # This is a json object with package names as keys and their main outputs as values
             PACKAGES=$(nix eval --json ".#packages.$SYSTEM")
 
@@ -98,7 +85,7 @@ jobs:
               if [[ $CACHED == y ]]; then
                 echo "| $ATTR | $SYSTEM | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
               else
-                REBUILD+=("$(jq --null-input '{attr: $attr, runner: $runner}' --arg attr "$ATTR" --arg runner "$RUNNER")")
+                REBUILD+=("$(jq --null-input '{attr: $attr, system: $system}' --arg attr "$ATTR" --arg system "$SYSTEM")")
                 echo "| $ATTR | $SYSTEM | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
               fi
             done
@@ -118,7 +105,7 @@ jobs:
         include: ${{fromJSON(needs.build-plan.outputs.matrix)}}
       # Disable fail-fast for non-PR builds to ensure all outputs have a chance to be built.
       fail-fast: ${{ github.event_name == 'pull_request' }}
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.system == 'x86_64-darwin' && 'macos-13' || (matrix.system == 'aarch64-darwin' && 'macos-14' || 'nixos-23.11') }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
