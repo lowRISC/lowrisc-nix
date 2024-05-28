@@ -57,16 +57,27 @@ jobs:
         id: plan
         run: |
           REBUILD=()
-          echo '| Package | Status |' >> $GITHUB_STEP_SUMMARY
-          echo '|---------|--------|' >> $GITHUB_STEP_SUMMARY
+          echo '| Package | System | Status |' >> $GITHUB_STEP_SUMMARY
+          echo '|---------|--------|--------|' >> $GITHUB_STEP_SUMMARY
 
-          SYSTEMS=(x86_64-linux)
+          if ${{ github.event_name == 'pull_request' }}; then
+            # We only support MacOS with best-effort basis. They take much longer to build so shouldn't block PR.
+            SYSTEMS=(x86_64-linux)
+          else
+            SYSTEMS=(x86_64-linux x86_64-darwin aarch64-darwin)
+          fi
 
           for SYSTEM in "${SYSTEMS[@]}"; do
             # Choose a GitHub runner for the given system.
             case $SYSTEM in
               x86_64-linux)
                 RUNNER=nixos-23.11
+                ;;
+              x86_64-darwin)
+                RUNNER=macos-13
+                ;;
+              aarch64-darwin)
+                RUNNER=macos-14
                 ;;
             esac
 
@@ -85,10 +96,10 @@ jobs:
               fi
 
               if [[ $CACHED == y ]]; then
-                echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+                echo "| $ATTR | $SYSTEM | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
               else
                 REBUILD+=("$(jq --null-input '{attr: $attr, runner: $runner}' --arg attr "$ATTR" --arg runner "$RUNNER")")
-                echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
+                echo "| $ATTR | $SYSTEM | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
               fi
             done
           done
