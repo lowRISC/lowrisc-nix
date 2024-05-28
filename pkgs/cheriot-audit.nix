@@ -7,8 +7,8 @@
   fetchFromGitHub,
   lib,
   cmake,
-  ninja,
   git,
+  darwin,
 }: let
   # Source dependencies of cheriot-audit
   regocpp = fetchFromGitHub {
@@ -49,8 +49,13 @@
     rev = "b9be5b9444772324459989177108a6a65b8b2769";
     hash = "sha256-emTIaoUyTINbAAn9tw1r3zLTQt58N8A1zoP+0y41yKo=";
   };
+
+  mkDerivation =
+    if stdenv.isDarwin
+    then darwin.apple_sdk_11_0.stdenv.mkDerivation
+    else stdenv.mkDerivation;
 in
-  stdenv.mkDerivation rec {
+  mkDerivation rec {
     pname = "cheriot-audit";
     version = "0.0.0";
 
