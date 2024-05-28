@@ -61,7 +61,7 @@ jobs:
 
           if ${{ github.event_name == 'pull_request' }}; then
             # We only support MacOS with best-effort basis. They take much longer to build so shouldn't block PR.
-            SYSTEMS=(x86_64-linux)
+            SYSTEMS=(x86_64-linux x86_64-darwin)
           else
             SYSTEMS=(x86_64-linux x86_64-darwin aarch64-darwin)
           fi
