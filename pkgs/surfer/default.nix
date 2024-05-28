@@ -11,10 +11,10 @@
   wayland,
   libxkbcommon,
   libGL,
+  stdenv,
+  darwin,
 }:
-rustPlatform.buildRustPackage.override {
-  rustc = rust-bin.stable."1.76.0".minimal;
-} rec {
+rustPlatform.buildRustPackage rec {
   pname = "surfer";
   version = "0.2.0-dev";
 
@@ -27,18 +27,18 @@ rustPlatform.buildRustPackage.override {
   };
 
   nativeBuildInputs = [pkg-config];
-  buildInputs = [openssl wayland libxkbcommon libGL];
+  buildInputs = [openssl wayland libxkbcommon libGL] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.AppKit;
 
   # These libraries are dlopen'ed at runtime, but they won't be able to find anything in
   # NixOS's path. So force them to be linked.
   # This could alternatively be a wrapper which adds LD_LIBRARY_PATH.
-  RUSTFLAGS = map (a: "-C link-arg=${a}") [
+  RUSTFLAGS = lib.optionals stdenv.isLinux (map (a: "-C link-arg=${a}") [
     "-Wl,--push-state,--no-as-needed"
     "-lEGL"
     "-lwayland-client"
     "-lxkbcommon"
     "-Wl,--pop-state"
-  ];
+  ]);
 
   cargoLock = {
     lockFile = ./Cargo.lock;
