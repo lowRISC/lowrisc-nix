@@ -116,6 +116,8 @@ jobs:
     strategy:
       matrix:
         include: ${{fromJSON(needs.build-plan.outputs.matrix)}}
+      # Disable fail-fast for non-PR builds to ensure all outputs have a chance to be built.
+      fail-fast: ${{ github.event_name == 'pull_request' }}
     runs-on: ${{ matrix.runner }}
     steps:
       - name: checkout
