@@ -126,7 +126,7 @@ jobs:
         run: |
           # For derivations with multiple outputs, this produces a list that references all the outputs.
           OUTPUTS=$(nix eval .#${{ matrix.attr }} --apply 'd: d.outputs' --json | jq -r 'map(".#${{ matrix.attr }}." + .) | join(" ")')
-          nix build $OUTPUTS --accept-flake-config
+          nix build $OUTPUTS --accept-flake-config -L
 
       - name: Upload Cache
         if: github.event_name != 'pull_request'
