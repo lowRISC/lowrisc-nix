@@ -53,15 +53,6 @@ jobs:
             substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
             trusted-public-keys = nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      # Attic is not in nixpkgs currently, so it's not in NixOS cache. In case it's also not in our cache,
-      # we want to avoid having to build it for every job. Do a build ahead of time and cache attic itself.
-      - name: Build and Cache Attic
-        if: github.event_name != 'pull_request'
-        run: |
-          nix profile install github:zhaofengli/attic#attic
-          attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
-          attic push public $(which attic)
-
       - name: Generate Build Plan
         id: plan
         run: |
@@ -122,7 +113,7 @@ jobs:
       - name: Setup Cache
         if: github.event_name != 'pull_request'
         run: |
-          nix profile install github:zhaofengli/attic#attic
+          nix profile install nixpkgs#attic-client
           attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
 
       - name: Build
