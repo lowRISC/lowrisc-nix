@@ -57,8 +57,8 @@ jobs:
         id: plan
         run: |
           REBUILD=()
-          echo '| Package | Outputs | Status |' >> $GITHUB_STEP_SUMMARY
-          echo '|---------|---------|--------|' >> $GITHUB_STEP_SUMMARY
+          echo '| Package | Status |' >> $GITHUB_STEP_SUMMARY
+          echo '|---------|--------|' >> $GITHUB_STEP_SUMMARY
 
           for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --flake .#packages.x86_64-linux'); do
             ATTR=$(echo "$LINE" | jq -r .attr)
@@ -74,15 +74,10 @@ jobs:
             done
 
             if [[ $CACHED == y ]]; then
-              echo "| $ATTR | $OUTPUTS | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+              echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
             else
-              if [[ "$OUTPUTS" = *,* ]]; then
-                # If the derivation has multiple outputs, ensure that they're all built and cached
-                REBUILD+=($ATTR.\{$OUTPUTS\})
-              else
-                REBUILD+=($ATTR)
-              fi
-              echo "| $ATTR | $OUTPUTS | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
+              REBUILD+=($ATTR)
+              echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
             fi
           done
 
@@ -117,7 +112,10 @@ jobs:
           attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
 
       - name: Build
-        run: nix build .#${{ matrix.attr }} --accept-flake-config
+        run: |
+          # For derivations with multiple outputs, this produces a list that references all the outputs.
+          OUTPUTS=$(nix eval .#${{ matrix.attr }} --apply 'd: d.outputs' --json | jq -r 'map(".#${{ matrix.attr }}." + .) | join(" ")')
+          nix build $OUTPUTS --accept-flake-config
 
       - name: Upload Cache
         if: github.event_name != 'pull_request'
