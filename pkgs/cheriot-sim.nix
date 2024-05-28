@@ -19,8 +19,13 @@
     # On MacOS sail needs to access the codesign package.
     nativeBuildInputs = prev.nativeBuildInputs ++ lib.optional stdenv.isDarwin darwin.sigtool;
   });
+
+  mkDerivation =
+    if stdenv.isDarwin
+    then darwin.apple_sdk_11_0.stdenv.mkDerivation
+    else stdenv.mkDerivation;
 in
-  stdenv.mkDerivation rec {
+  mkDerivation rec {
     pname = "cheriot-sim";
     version = "e5038a0";
 
