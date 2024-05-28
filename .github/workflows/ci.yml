@@ -40,7 +40,7 @@ jobs:
     name: Generate Build Plan
     runs-on: nixos-23.11
     outputs:
-      attrs: ${{ steps.plan.outputs.ATTRS }}
+      matrix: ${{ steps.plan.outputs.MATRIX }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -60,40 +60,52 @@ jobs:
           echo '| Package | Status |' >> $GITHUB_STEP_SUMMARY
           echo '|---------|--------|' >> $GITHUB_STEP_SUMMARY
 
-          for LINE in $(nix-shell -p nix-eval-jobs --run 'nix-eval-jobs --accept-flake-config --flake .#packages.x86_64-linux'); do
-            ATTR=$(echo "$LINE" | jq -r .attr)
-            OUTPUTS=$(echo "$LINE" | jq -r '.outputs | keys | join(",")')
+          SYSTEMS=(x86_64-linux)
 
-            # Check if all outputs are cached. We don't use nix-eval-jobs's cache check because it also includes local path
-            CACHED=y
-            for OUTPUT in ${OUTPUTS//,/ }; do
-              HASH=$(echo "$LINE" | jq -r ".outputs.$OUTPUT" | cut -d '/' -f4 | cut -d '-' -f1)
-              if ! curl -sSfL "https://nix-cache.lowrisc.org/public/$HASH.narinfo"; then
-                CACHED=n
+          for SYSTEM in "${SYSTEMS[@]}"; do
+            # Choose a GitHub runner for the given system.
+            case $SYSTEM in
+              x86_64-linux)
+                RUNNER=nixos-23.11
+                ;;
+            esac
+
+            # This is a json object with package names as keys and their main outputs as values
+            PACKAGES=$(nix eval --json ".#packages.$SYSTEM")
+
+            for ATTR in $(echo "$PACKAGES" | jq -r 'keys[]'); do
+              HASH=$(echo "$PACKAGES" | jq -r ".[\"$ATTR\"]" | cut -d '/' -f4 | cut -d '-' -f1)
+
+              # Check if the main output is cached by us or upstream.
+              CACHED=n
+              if curl -sSfL "https://nix-cache.lowrisc.org/public/$HASH.narinfo"; then
+                CACHED=y
+              elif curl -sSfL "https://cache.nixos.org/$HASH.narinfo"; then
+                CACHED=y
+              fi
+
+              if [[ $CACHED == y ]]; then
+                echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+              else
+                REBUILD+=("$(jq --null-input '{attr: $attr, runner: $runner}' --arg attr "$ATTR" --arg runner "$RUNNER")")
+                echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
               fi
             done
-
-            if [[ $CACHED == y ]]; then
-              echo "| $ATTR | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
-            else
-              REBUILD+=($ATTR)
-              echo "| $ATTR | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
-            fi
           done
 
-          echo 'ATTRS<<EOF' >> $GITHUB_OUTPUT
-          jq --null-input '$ARGS.positional' --args -- "${REBUILD[@]}" >> $GITHUB_OUTPUT
+          echo 'MATRIX<<EOF' >> $GITHUB_OUTPUT
+          jq --null-input '$ARGS.positional' --jsonargs -- "${REBUILD[@]}" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
   build:
     needs: build-plan
     name: Build
-    runs-on: nixos-23.11
     # Matrix can't be empty, so skip the job entirely if nothing needs to be rebuilt.
-    if: fromJSON(needs.build-plan.outputs.attrs)[0] != null
+    if: fromJSON(needs.build-plan.outputs.matrix)[0] != null
     strategy:
       matrix:
-        attr: ${{fromJSON(needs.build-plan.outputs.attrs)}}
+        include: ${{fromJSON(needs.build-plan.outputs.matrix)}}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
