@@ -5,7 +5,6 @@
   lib,
   fetchFromGitLab,
   rustPlatform,
-  rust-bin,
   pkg-config,
   openssl,
   wayland,
