@@ -27,6 +27,7 @@
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
   sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
+  peakrdl = pkgs.callPackage ./peakrdl.nix {};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
