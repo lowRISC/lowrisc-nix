@@ -30,6 +30,7 @@
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
 }
 // pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
+  veridian = pkgs.callPackage ./veridian/default.nix {};
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
   lowrisc-toolchain-gcc-rv64imac = pkgs.callPackage ./lowrisc-toolchain-gcc-rv64imac.nix {};
 }
