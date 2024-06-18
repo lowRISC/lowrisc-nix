@@ -11,7 +11,7 @@ in {
   standardMdbookFileset = root:
     fs.unions [
       (root + /book.toml)
-      (fs.fileFilter (hasExts ["md" "svg" "png" "jpeg" "jpg"]) root)
+      (fs.fileFilter (hasExts ["md" "svg" "png" "jpeg" "jpg" "webp" "avif"]) root)
     ];
 
   # A helper function to create mdBook site builds.
