@@ -25,11 +25,14 @@ verible.override (prev: {
         };
 
         fetchAttrs = {
-          sha256 = "sha256-bKASgc5KftCWtMvJkGA4nweBAtgdnyC9uXIJxPjKYS0=";
+          sha256 = "sha256-/kN1hyTcq+sARJkk7aOXVJVFhyTWdcREF4EwSmelVU4=";
         };
 
         patches = [];
 
         bazel = bazel_6;
+
+        # Disable tests (takes ~30m to run locally on a laptop)
+        bazelTestTargets = [];
       });
 })
