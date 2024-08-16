@@ -91,6 +91,11 @@ in
       "--symlink /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem"
     ];
 
+    profile = ''
+      # Workaround bazel bug: https://github.com/bazelbuild/bazel/issues/23217
+      export TMPDIR=/tmp
+    '';
+
     runScript = "\${SHELL:-bash}";
   })
   .env
