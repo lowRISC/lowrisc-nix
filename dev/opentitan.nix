@@ -31,8 +31,9 @@
     '';
   };
 in
-  (pkgs.buildFHSEnv {
-    name = "opentitan";
+  (pkgs.buildFHSEnvOverlay {
+    pname = "opentitan";
+    version = "dev";
     targetPkgs = _:
       with pkgs;
         [
@@ -84,12 +85,6 @@ in
         edaTools
         ++ extraPkgs;
     extraOutputsToInstall = ["dev"];
-
-    extraBwrapArgs = [
-      # OpenSSL included in the Python downloaded by Bazel makes use of these paths.
-      "--symlink ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf"
-      "--symlink /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem"
-    ];
 
     profile = ''
       # Workaround bazel bug: https://github.com/bazelbuild/bazel/issues/23217
