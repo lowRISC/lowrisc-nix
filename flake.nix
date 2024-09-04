@@ -36,6 +36,7 @@
       lib = {
         poetryOverrides = import ./lib/poetryOverrides.nix;
         doc = import ./lib/doc.nix;
+        buildFHSEnvOverlay = import ./lib/buildFHSEnvOverlay.nix;
       };
     };
 
@@ -44,6 +45,9 @@
         inherit system;
         overlays = [
           rust-overlay.overlays.default
+          (final: prev: {
+            buildFHSEnvOverlay = final.callPackage no_system_outputs.lib.buildFHSEnvOverlay {};
+          })
         ];
       };
       lowrisc_pkgs = import ./pkgs {inherit pkgs inputs;};
