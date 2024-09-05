@@ -1,5 +1,5 @@
-{pkgs}: self: super: {
-  chipwhisperer = super.chipwhisperer.overridePythonAttrs (
+{pkgs}: final: prev: {
+  chipwhisperer = prev.chipwhisperer.overridePythonAttrs (
     _: {
       src = pkgs.fetchzip {
         url = "https://github.com/newaetech/chipwhisperer-minimal/archive/2643131b71e528791446ee1bab7359120288f4ab.zip";
@@ -8,7 +8,7 @@
     }
   );
 
-  edalize = super.edalize.overridePythonAttrs (
+  edalize = prev.edalize.overridePythonAttrs (
     _: {
       src = pkgs.fetchzip {
         url = "https://github.com/lowRISC/edalize/archive/refs/tags/v0.4.0.zip";
@@ -17,11 +17,11 @@
     }
   );
 
-  fusesoc = super.fusesoc.overridePythonAttrs (
+  fusesoc = prev.fusesoc.overridePythonAttrs (
     _: {
       src = pkgs.fetchzip {
-        url = "https://github.com/lowRISC/fusesoc/archive/refs/tags/ot-0.4.zip";
-        sha256 = "0dkrfgbmma7fq10ya4jyc8w5bhy3wi4kyqsvr75m2ck5iv2z4dd6";
+        url = "https://github.com/lowRISC/fusesoc/archive/refs/tags/ot-0.5.dev0.zip";
+        sha256 = "131wc0icsfyv8kn9419i0n3qxi3fbhw12mjrai6h9zvd25q0a2dr";
       };
     }
   );
