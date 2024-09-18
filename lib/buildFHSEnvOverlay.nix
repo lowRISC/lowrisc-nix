@@ -187,7 +187,7 @@
       ldconfig &> /dev/null
 
       ${preExecHook}
-      exec ${runScript} "$@"
+      exec unshare -c -- ${runScript} "$@"
     '';
 
   init = writeShellScript "${name}-init" initCmd;
