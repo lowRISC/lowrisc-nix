@@ -6,7 +6,7 @@
   inputs,
   ...
 }:
-{
+rec {
   ncurses5-fhs = pkgs.callPackage ./ncurses5-fhs.nix {};
   fpga-udev-rules = pkgs.callPackage ./fpga-udev-rules {};
 
@@ -27,6 +27,7 @@
   surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
   sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
+  veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
 }
