@@ -86,9 +86,5 @@
       formatter = pkgs.alejandra;
     });
   in
-    # Recursive-merge attrsets to compose the final flake outputs attrset.
-    builtins.foldl' nixpkgs.lib.attrsets.recursiveUpdate {} [
-      no_system_outputs
-      all_system_outputs
-    ];
+    no_system_outputs // all_system_outputs;
 }

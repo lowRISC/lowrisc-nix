@@ -5,8 +5,7 @@
   pkgs,
   inputs,
   ...
-}:
-rec {
+}: rec {
   ncurses5-fhs = pkgs.callPackage ./ncurses5-fhs.nix {};
   fpga-udev-rules = pkgs.callPackage ./fpga-udev-rules {};
 
@@ -30,8 +29,6 @@ rec {
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
-}
-// pkgs.lib.optionalAttrs (pkgs.system == "x86_64-linux") {
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
   lowrisc-toolchain-gcc-rv64imac = pkgs.callPackage ./lowrisc-toolchain-gcc-rv64imac.nix {};
 }
