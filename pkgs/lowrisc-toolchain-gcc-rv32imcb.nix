@@ -31,4 +31,8 @@ stdenv.mkDerivation rec {
       patchelf --set-rpath ${lib.makeLibraryPath ["$out" stdenv.cc.cc ncurses5]} "$f" || true
     done
   '';
+
+  meta = {
+    platforms = ["x86_64-linux"];
+  };
 }
