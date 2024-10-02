@@ -73,7 +73,7 @@ in
       license = licenses.mit;
       maintainers = with maintainers; [sharzy];
       mainProgram = "slang";
-      broken = stdenv.system == "x86_64-darwin";
+      broken = stdenv.isDarwin;
       platforms = platforms.all;
     };
   }
