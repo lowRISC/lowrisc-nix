@@ -192,7 +192,7 @@
 
   init = writeShellScript "${name}-init" initCmd;
   bin = writeShellScript "${name}-wrap" ''
-    ${util-linux}/bin/unshare --map-current-user --mount --keep-caps --fork --kill-child -- ${init} "$@"
+    ${util-linux}/bin/unshare --map-current-user --mount --keep-caps -- ${init} "$@"
   '';
 in
   runCommandLocal name {
