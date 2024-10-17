@@ -17,8 +17,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "CHERIoT-Platform";
     repo = "llvm-project";
-    rev = "f2e652bc8c0f630fe5eeb0a117f5e2c9a9845f11";
-    hash = "sha256-YVNBxlSIQjIEvsP8nUNUqOvY6XFDhn3+6416MOu8ryE=";
+    rev = "3a9b8a5b5b09c27343847c6cf6ef6a1c95fad662";
+    hash = "sha256-h8nkiuhZmZ6G034fAC3xhz6N0BZ/mUcWbvA2P5GJdc8=";
   };
   sourceRoot = "${src.name}/llvm";
   nativeBuildInputs = [cmake ninja lld python3] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.libs.xpc;
