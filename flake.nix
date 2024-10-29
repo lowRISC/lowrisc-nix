@@ -82,6 +82,16 @@
               srecord
             ]);
         };
+        caliptra = pkgs.mkShell {
+          name = "caliptra";
+          packages = 
+            (with lowrisc_pkgs; [riscv64-unknown-gcc])
+            ++ (with pkgs; [
+            gnumake
+            verilator
+          ]);
+          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath (with pkgs; [ libmpc gmp libz zstd mpfr ])}";
+        };
       };
       formatter = pkgs.alejandra;
     });
