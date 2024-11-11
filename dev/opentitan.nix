@@ -4,6 +4,7 @@
 {
   pkgs,
   ncurses5-fhs,
+  ncurses6-fhs,
   bazel_ot,
   python_ot,
   verilator_ot,
@@ -12,6 +13,7 @@
   wrapCCWith,
   gcc-unwrapped,
   pkg-config,
+  symlinkJoin,
   extraPkgs ? [],
   ...
 }: let
@@ -64,7 +66,13 @@ in
           udev
           libftdi1
           libusb1 # needed for libftdi1 pkg-config
-          ncurses5-fhs
+
+          # Somehow if you have both then FHS env building recurses forever, so
+          # symlink join them together first.
+          (symlinkJoin {
+            name = "ncurses";
+            paths = [ncurses5-fhs ncurses6-fhs];
+          })
 
           srecord
 

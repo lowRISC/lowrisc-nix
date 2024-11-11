@@ -70,7 +70,7 @@
       packages = flake-utils.lib.filterPackages system lowrisc_pkgs;
       devShells = {
         opentitan = pkgs.callPackage ./dev/opentitan.nix {
-          inherit (lowrisc_pkgs) ncurses5-fhs bazel_ot verilator_ot python_ot verible_ot;
+          inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot python_ot verible_ot;
         };
         cheriot = pkgs.mkShell {
           name = "cheriot";
