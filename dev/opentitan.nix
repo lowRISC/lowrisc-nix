@@ -86,6 +86,11 @@ in
         ++ extraPkgs;
     extraOutputsToInstall = ["dev"];
 
+    preExecHook = ''
+      ln -s ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
+      ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem
+    '';
+
     profile = ''
       # Workaround bazel bug: https://github.com/bazelbuild/bazel/issues/23217
       export TMPDIR=/tmp

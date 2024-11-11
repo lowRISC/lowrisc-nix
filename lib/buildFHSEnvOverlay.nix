@@ -111,6 +111,11 @@
           /etc/profile | /etc/profile.d)
             continue
             ;;
+          # Needs special treatment to make /etc/ssl writable (needed in OT devShell for Bazel)
+          /etc/ssl)
+            ${coreutils}/bin/cp -rP $i $path
+            continue
+            ;;
           # Populated later
           /etc/ld.so*)
             continue
