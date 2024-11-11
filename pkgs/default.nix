@@ -7,6 +7,7 @@
   ...
 }: rec {
   ncurses5-fhs = pkgs.callPackage ./ncurses5-fhs.nix {};
+  ncurses6-fhs = pkgs.callPackage ./ncurses6-fhs.nix {};
   fpga-udev-rules = pkgs.callPackage ./fpga-udev-rules {};
 
   # OpenTitan packages
