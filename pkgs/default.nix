@@ -34,6 +34,7 @@
 
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
   sv-lang_7 = import ./sv-lang.nix {inherit pkgs;};
+  sv-bugpoint = pkgs.callPackage ./sv-bugpoint.nix {sv-lang = sv-lang_7;};
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_7;};
   peakrdl = pkgs.callPackage ./peakrdl.nix {};
 
