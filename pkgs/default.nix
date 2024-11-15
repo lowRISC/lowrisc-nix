@@ -31,6 +31,7 @@
   peakrdl = pkgs.callPackage ./peakrdl.nix {};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
+  riscv64-gcc_caliptra = pkgs.callPackage ./riscv64-gcc_caliptra {};
   lowrisc-toolchain-gcc-rv32imcb = pkgs.callPackage ./lowrisc-toolchain-gcc-rv32imcb.nix {};
   lowrisc-toolchain-gcc-rv64imac = pkgs.callPackage ./lowrisc-toolchain-gcc-rv64imac.nix {};
 }
