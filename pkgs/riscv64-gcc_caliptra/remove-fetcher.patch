@@ -1,0 +1,86 @@
+diff -u a/Makefile.in b/Makefile.in
+--- a/Makefile.in       2024-11-14 16:52:57.681155821 +0000
++++ b/Makefile.in       2024-11-14 16:53:16.561945183 +0000
+@@ -228,61 +228,21 @@
+ #
+ 
+-ifeq ($(findstring $(srcdir),$(GCC_SRCDIR)),$(srcdir))
+-GCC_SRC_GIT := $(GCC_SRCDIR)/.git
+-else
+ GCC_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(BINUTILS_SRCDIR)),$(srcdir))
+-BINUTILS_SRC_GIT := $(BINUTILS_SRCDIR)/.git
+-else
+ BINUTILS_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(GDB_SRCDIR)),$(srcdir))
+-GDB_SRC_GIT := $(GDB_SRCDIR)/.git
+-else
+ GDB_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(NEWLIB_SRCDIR)),$(srcdir))
+-NEWLIB_SRC_GIT := $(NEWLIB_SRCDIR)/.git
+-else
+ NEWLIB_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(GLIBC_SRCDIR)),$(srcdir))
+-GLIBC_SRC_GIT := $(GLIBC_SRCDIR)/.git
+-else
+ GLIBC_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(MUSL_SRCDIR)),$(srcdir))
+-MUSL_SRC_GIT := $(MUSL_SRCDIR)/.git
+-else
+ MUSL_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(QEMU_SRCDIR)),$(srcdir))
+-QEMU_SRC_GIT := $(QEMU_SRCDIR)/.git
+-else
+ QEMU_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(SPIKE_SRCDIR)),$(srcdir))
+-SPIKE_SRC_GIT := $(SPIKE_SRCDIR)/.git
+-else
+ SPIKE_SRC_GIT :=
+-endif
+ 
+-ifeq ($(findstring $(srcdir),$(DEJAGNU_SRCDIR)),$(srcdir))
+-DEJAGNU_SRC_GIT := $(DEJAGNU_SRCDIR)/.git
+-else
+ DEJAGNU_SRC_GIT :=
+-endif
+ 
+-ifneq ("$(wildcard $(GCC_SRCDIR)/.git)","")
+-GCCPKGVER := g$(shell git -C $(GCC_SRCDIR) describe --always --dirty --exclude '*')
+-else
+ GCCPKGVER :=
+-endif
+
+--- a/configure	2024-11-15 21:47:07.285418520 +0000
++++ b/configure	2024-11-15 21:47:32.884952250 +0000
+@@ -3271,17 +3271,6 @@
+ fi
+ 
+ 
+-if test x"$CURL" != xno; then :
+-  FETCHER="$CURL -L -o - --ftp-pasv --retry 10"
+-elif test x"$WGET" != xno; then :
+-  FETCHER="$WGET -O -"
+-elif test x"$FTP" != xno; then :
+-  FETCHER="$FTP -o - -p"
+-else
+-  as_fn_error $? "no file transfer utility found" "$LINENO" 5
+-fi
+-
+-
+ # Check whether --enable-linux was given.
+ if test "${enable_linux+set}" = set; then :
+   enableval=$enable_linux;
