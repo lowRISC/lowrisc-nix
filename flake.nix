@@ -82,6 +82,9 @@
               srecord
             ]);
         };
+        caliptra = pkgs.callPackage ./dev/caliptra.nix {
+          inherit (lowrisc_pkgs) verilator_caliptra riscv64-gcc_caliptra;
+        };
       };
       formatter = pkgs.alejandra;
     });
