@@ -23,6 +23,8 @@
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
 
+  verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {};
+
   container-hotplug = pkgs.callPackage ./container-hotplug {};
   surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
