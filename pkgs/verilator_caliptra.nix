@@ -20,4 +20,7 @@
     sha256 = "sha256-Y6GkIgkauayJmGhOQg2kWjbcxYVIob6InMopv555Lb8=";
   };
   patches = [];
+  meta = {
+    broken = gcc12Stdenv.isDarwin;
+  };
 }
