@@ -17,6 +17,8 @@
     urllib3 = ["hatchling"];
     fusesoc = ["setuptools" "setuptools-scm"];
     chipwhisperer = ["setuptools"];
+    siphash = ["setuptools"];
+    tockloader = ["setuptools"];
   };
   buildreqs-overlay = (
     final: prev:
@@ -58,6 +60,9 @@
     };
     isort = prev.isort.override {
       # Some problem building due to a malformed semantic version string.
+      preferWheel = true;
+    };
+    ninja = prev.ninja.override {
       preferWheel = true;
     };
   };
