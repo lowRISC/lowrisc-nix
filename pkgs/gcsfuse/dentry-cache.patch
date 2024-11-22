@@ -1,4 +1,4 @@
-From e1575385af3f980b88e3197bf524dc4c6ee15148 Mon Sep 17 00:00:00 2001
+From 6cd0bd89e5d79d5e323220553f1aa8761e7bd6a9 Mon Sep 17 00:00:00 2001
 From: Gary Guo <gary.guo@lowrisc.org>
 Date: Fri, 2 Aug 2024 11:32:48 +0100
 Subject: [PATCH 1/2] Set FUSE entry expiration time
@@ -33,10 +33,10 @@ Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
  1 file changed, 6 insertions(+)
 
 diff --git a/internal/fs/fs.go b/internal/fs/fs.go
-index ba3e9f57cb..47de50323c 100644
+index befb0b417..d8bfa3c01 100644
 --- a/internal/fs/fs.go
 +++ b/internal/fs/fs.go
-@@ -1358,6 +1358,12 @@ func (fs *fileSystem) LookUpInode(
+@@ -1401,6 +1401,12 @@ func (fs *fileSystem) LookUpInode(
  		return err
  	}
  
@@ -50,7 +50,7 @@ index ba3e9f57cb..47de50323c 100644
  }
  
 
-From 85a9480bea86829af64cb6e7da31a0ae4cdceee7 Mon Sep 17 00:00:00 2001
+From 069b4a7d6c1b467f08a706db580ca514fc5a4a2a Mon Sep 17 00:00:00 2001
 From: Gary Guo <gary.guo@lowrisc.org>
 Date: Mon, 5 Aug 2024 13:50:10 +0100
 Subject: [PATCH 2/2] Enable negative dentry caching
@@ -64,10 +64,10 @@ Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
  1 file changed, 10 insertions(+)
 
 diff --git a/internal/fs/fs.go b/internal/fs/fs.go
-index 47de50323c..f3c397db5b 100644
+index d8bfa3c01..bf7bdc233 100644
 --- a/internal/fs/fs.go
 +++ b/internal/fs/fs.go
-@@ -1344,6 +1344,16 @@ func (fs *fileSystem) LookUpInode(
+@@ -1387,6 +1387,16 @@ func (fs *fileSystem) LookUpInode(
  	// Find or create the child inode.
  	child, err := fs.lookUpOrCreateChildInode(ctx, parent, op.Name)
  	if err != nil {
