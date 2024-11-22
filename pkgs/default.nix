@@ -25,7 +25,10 @@
 
   verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {};
 
+  # IT packages
+  gcsfuse = pkgs.callPackage ./gcsfuse {};
   container-hotplug = pkgs.callPackage ./container-hotplug {};
+
   surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
   sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
