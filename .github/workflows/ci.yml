@@ -17,26 +17,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  checks:
+  check:
     name: Quality Check
-    runs-on: nixos-24.05
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v24
-
-      - name: Nix Format Check
-        run: nix fmt -- . --check
-
-      - name: Run Nix Checks
-        run: nix flake check -L
-
-  build-plan:
-    # Save some computation. If the checks fail, don't build.
-    needs: checks
-    name: Generate Build Plan
     runs-on: nixos-24.05
     outputs:
       matrix: ${{ steps.plan.outputs.MATRIX }}
@@ -50,6 +32,12 @@ jobs:
           extra_nix_config: |
             substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
             trusted-public-keys = nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+      - name: Nix Format Check
+        run: nix fmt -- . --check
+
+      - name: Run Nix Checks
+        run: nix flake check -L
 
       - name: Generate Build Plan
         id: plan
@@ -94,13 +82,13 @@ jobs:
           echo 'EOF' >> $GITHUB_OUTPUT
 
   build:
-    needs: build-plan
+    needs: check
     name: Build
     # Matrix can't be empty, so skip the job entirely if nothing needs to be rebuilt.
-    if: fromJSON(needs.build-plan.outputs.matrix)[0] != null
+    if: fromJSON(needs.check.outputs.matrix)[0] != null
     strategy:
       matrix:
-        include: ${{fromJSON(needs.build-plan.outputs.matrix)}}
+        include: ${{fromJSON(needs.check.outputs.matrix)}}
       # Disable fail-fast for non-PR builds to ensure all outputs have a chance to be built.
       fail-fast: ${{ github.event_name == 'pull_request' }}
     runs-on: ${{ matrix.system == 'x86_64-darwin' && 'macos-13' || (matrix.system == 'aarch64-darwin' && 'macos-14' || 'nixos-24.05') }}
@@ -131,3 +119,19 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           attic push public result*
+
+  # Summarise check status with a single job for GitHub branch protection rule
+  status:
+    needs:
+      - check
+      - build
+    if: ${{ always() }}
+    name: Status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check check status
+        if: ${{ needs.check.result != 'success' }}
+        run: exit 1
+      - name: Check build status
+        if: ${{ needs.build.result != 'success' && needs.build.result != 'skipped' }}
+        run: exit 1
