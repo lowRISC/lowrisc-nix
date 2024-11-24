@@ -27,6 +27,7 @@
 
   # IT packages
   gcsfuse = pkgs.callPackage ./gcsfuse {};
+  gcs-fuse-csi-driver-sidecar-mounter = pkgs.callPackage ./gcs-fuse-csi-driver-sidecar-mounter.nix {inherit gcsfuse;};
   container-hotplug = pkgs.callPackage ./container-hotplug {};
 
   surfer = pkgs.callPackage ./surfer/default.nix {};
