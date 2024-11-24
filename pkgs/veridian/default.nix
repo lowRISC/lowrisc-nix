@@ -6,7 +6,7 @@
   rustPlatform,
   pkg-config,
   openssl,
-  libclang,
+  llvmPackages_17,
   verilator,
   verible,
   cmake,
@@ -30,12 +30,12 @@ rustPlatform.buildRustPackage {
 
   # Verilator and Verible are used in the test suit
   nativeBuildInputs = [pkg-config cmake verilator verible];
-  buildInputs = [openssl libclang boost182 sv-lang_6];
+  buildInputs = [openssl boost182 sv-lang_6];
 
   cargoLock.lockFile = ./Cargo.lock;
   buildFeatures = ["slang"];
 
-  LIBCLANG_PATH = "${libclang.lib}/lib";
+  LIBCLANG_PATH = "${llvmPackages_17.libclang.lib}/lib";
   SLANG_INSTALL_PATH = "${sv-lang_6}";
 
   # The check doesn't build, so we don't bother checking.
