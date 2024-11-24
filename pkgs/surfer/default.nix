@@ -15,13 +15,13 @@
 }:
 rustPlatform.buildRustPackage rec {
   pname = "surfer";
-  version = "0.2.0-dev";
+  version = "0.3.0-dev";
 
   src = fetchFromGitLab {
     owner = "surfer-project";
     repo = pname;
-    rev = "01c2486f65e248baccf666e2ee4dd9b4e219cc21";
-    hash = "sha256-MJ7tBnqZlmnNIIqDFPj9numeztMUfcrDTbRMF6okOVk=";
+    rev = "1df1df84f86bc186ccb4a351d52fdd6f3e0d57de";
+    hash = "sha256-TQC9xTknDbcZgF0qsjRWdJnQ8oOqd/R0lFV7U9hOCYY=";
     fetchSubmodules = true;
   };
 
@@ -43,8 +43,8 @@ rustPlatform.buildRustPackage rec {
     lockFile = ./Cargo.lock;
     outputHashes = {
       "codespan-0.12.0" = "sha256-3F2006BR3hyhxcUTaQiOjzTEuRECKJKjIDyXonS/lrE=";
-      "egui_skia-0.5.0" = "sha256-dpkcIMPW+v742Ov18vjycLDwnn1JMsvbX6qdnuKOBC4=";
-      "tracing-tree-0.2.0" = "sha256-/JNeAKjAXmKPh0et8958yS7joORDbid9dhFB0VUAhZc=";
+      "egui_skia_renderer-0.1.0" = "sha256-K/IRanUbXjOa/8EsBKh7/CsqA60zLAo/g09bLdp3zR8=";
+      "spade-0.10.0" = "sha256-nl9MsrV68mE7hVEBFF/WdasUXCJoUazCFg4xG+2MOEY=";
     };
   };
 
