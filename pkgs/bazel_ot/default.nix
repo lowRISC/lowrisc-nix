@@ -4,7 +4,7 @@
 {
   runCommand,
   bazelisk,
-  bazel_6,
+  bazel_7,
   ...
 }:
 # OpenTitan requires a specific version of Bazel.
@@ -19,5 +19,5 @@ runCommand "bazel" {} ''
   cp -r ${bazelisk} $out
   chmod -R +w $out
   ln -s $out/bin/bazelisk $out/bin/bazel
-  cp -r ${bazel_6}/share $out/share
+  cp -r ${bazel_7}/share $out/share
 ''
