@@ -4,7 +4,7 @@
 {
   inputs,
   pkgs,
-  python3,
+  python39,
   lib,
   ...
 }: let
@@ -16,6 +16,7 @@
 
   env = poetry2nix.mkPoetryEnv {
     projectDir = ./.;
+    python = python39;
     overrides = [
       poetry-git-overlay
       poetryOverrides
