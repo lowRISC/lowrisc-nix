@@ -63,6 +63,11 @@
       preferWheel = true;
     };
     ninja = prev.ninja.override {
+      # Build error.
+      preferWheel = true;
+    };
+    pyyaml = prev.pyyaml.override {
+      # Build error.
       preferWheel = true;
     };
   };
