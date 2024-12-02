@@ -32,7 +32,9 @@
 
   surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
-  sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
+
+  inherit (pkgs.callPackage ./sv-lang.nix {}) sv-lang_6 sv-lang_7;
+  sv-bugpoint = pkgs.callPackage ./sv-bugpoint.nix {sv-lang = sv-lang_7;};
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
   peakrdl = pkgs.callPackage ./peakrdl.nix {};
 
