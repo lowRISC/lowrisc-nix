@@ -12,5 +12,6 @@ pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     verilator_caliptra
     riscv64-gcc_caliptra
+    hjson
   ];
 }
