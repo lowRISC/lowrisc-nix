@@ -19,7 +19,7 @@ concurrency:
 jobs:
   check:
     name: Quality Check
-    runs-on: nixos-24.05
+    runs-on: nixos
     outputs:
       matrix: ${{ steps.plan.outputs.MATRIX }}
     steps:
@@ -91,7 +91,7 @@ jobs:
         include: ${{fromJSON(needs.check.outputs.matrix)}}
       # Disable fail-fast for non-PR builds to ensure all outputs have a chance to be built.
       fail-fast: ${{ github.event_name == 'pull_request' }}
-    runs-on: ${{ matrix.system == 'x86_64-darwin' && 'macos-13' || (matrix.system == 'aarch64-darwin' && 'macos-14' || 'nixos-24.05') }}
+    runs-on: ${{ matrix.system == 'x86_64-darwin' && 'macos-13' || (matrix.system == 'aarch64-darwin' && 'macos-14' || 'nixos') }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
