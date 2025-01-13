@@ -54,12 +54,20 @@
 
   # We don't want to maintain a buildFHSEnv.nix ourselves, so pass the arguments through the nixpkgs buildFHSEnv
   # and steal the built FHS env out.
-  fhsenv = buildFHSEnvEnv (removeAttrs args [
-    "runScript"
-    "preExecHook"
-    "meta"
-    "passthru"
-  ]);
+  fhsenv = buildFHSEnvEnv ((removeAttrs args [
+      "runScript"
+      "preExecHook"
+      "meta"
+      "passthru"
+    ])
+    // {
+      extraBuildCommands =
+        (args.extraBuildCommands or "")
+        + ''
+          rm $out/usr/lib
+          cp -r $out/usr/lib64 $out/usr/lib
+        '';
+    });
 
   initCmd =
     ''
@@ -114,11 +122,6 @@
           # Needs special treatment to make /etc/ssl writable (needed in OT devShell for Bazel)
           /etc/ssl)
             ${coreutils}/bin/cp -rP $i $path
-            continue
-            ;;
-          # This is a symlink on Ubuntu. Turn it to regular files.
-          /etc/os-release)
-            ${coreutils}/bin/cp -L $i $path
             continue
             ;;
           # Populated later

@@ -52,6 +52,7 @@ in
 
           # dvsim uses git for logging/tagging purposes
           git
+          gnumake
 
           # Bazel downloads Rust compilers which are not patchelfed and they need this.
           zlib
