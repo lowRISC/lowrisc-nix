@@ -116,6 +116,11 @@
             ${coreutils}/bin/cp -rP $i $path
             continue
             ;;
+          # This is a symlink on Ubuntu. Turn it to regular files.
+          /etc/os-release)
+            ${coreutils}/bin/cp -L $i $path
+            continue
+            ;;
           # Populated later
           /etc/ld.so*)
             continue
