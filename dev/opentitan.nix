@@ -20,10 +20,17 @@
   # These dependencies are required for building user DPI C/C++ code, and cosimulation models.
   edaExtraDeps = with pkgs; [elfutils openssl python_ot];
 
-  # Bazel rules_rust expects build PIE binary in opt build but doesn't request PIE/PIC, so force PIC
   gcc-patched = wrapCCWith {
     cc = gcc-unwrapped;
-    nixSupport.cc-cflags = ["-fPIC"];
+    nixSupport = {
+      cc-cflags = [
+        # Bazel rules_rust expects build PIE binary in opt build but doesn't request PIE/PIC, so force PIC
+        "-fPIC"
+        # Bazel filters out environment variables, so add this one back. ldflags is similar.
+        "-idirafter /usr/include"
+      ];
+      cc-ldflags = ["-L/usr/lib" "-L/usr/lib32"];
+    };
   };
 
   # Bazel filters out all environment including PKG_CONFIG_PATH. Append this inside wrapper.
@@ -103,6 +110,11 @@ in
     profile = ''
       # Workaround bazel bug: https://github.com/bazelbuild/bazel/issues/23217
       export TMPDIR=/tmp
+      # This is already handled by wrappers
+      unset NIX_CFLAGS_COMPILE
+      unset NIX_CFLAGS_LINK
+      unset NIX_LDFLAGS
+      unset PKG_CONFIG_PATH
     '';
 
     runScript = "\${SHELL:-bash}";
