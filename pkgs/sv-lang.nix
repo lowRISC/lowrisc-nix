@@ -73,7 +73,8 @@ in
       license = licenses.mit;
       maintainers = with maintainers; [sharzy];
       mainProgram = "slang";
-      broken = stdenv.isDarwin;
+      # This is also broken on aarch64 where a test assumes `char` is signed.
+      broken = stdenv.isDarwin || stdenv.isAarch64;
       platforms = platforms.all;
     };
   }
