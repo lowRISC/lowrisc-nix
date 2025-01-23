@@ -47,9 +47,12 @@ in
       with pkgs;
         [
           bazel_ot
-          python_ot
           verilator_ot
           verible_ot
+
+          # Python dependencies
+          uv
+          python_ot
 
           # For serde-annotate which can be built with just cargo
           rustup
@@ -58,8 +61,11 @@ in
           ninja
 
           # dvsim uses git for logging/tagging purposes
-          git
+          gitFull
           gnumake
+
+          # Needed by sw/host/cryptotest/testvectors/data/BUILD
+          unzip
 
           # Bazel downloads Rust compilers which are not patchelfed and they need this.
           zlib
