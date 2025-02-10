@@ -13,12 +13,12 @@
 }:
 stdenv.mkDerivation rec {
   pname = "llvm-cheriot";
-  version = "13.0.0";
+  version = "17.0.0";
   src = fetchFromGitHub {
     owner = "CHERIoT-Platform";
     repo = "llvm-project";
-    rev = "3a9b8a5b5b09c27343847c6cf6ef6a1c95fad662";
-    hash = "sha256-h8nkiuhZmZ6G034fAC3xhz6N0BZ/mUcWbvA2P5GJdc8=";
+    rev = "905c7f67bda89433c7787903d61342bb25f85a42";
+    hash = "sha256-Md9QXylYvo7SYowZ89PkDLvZ6SjtWjnOThduzlDsJe0=";
   };
   sourceRoot = "${src.name}/llvm";
   nativeBuildInputs = [cmake ninja lld python3] ++ lib.optional stdenv.isDarwin darwin.apple_sdk.libs.xpc;
