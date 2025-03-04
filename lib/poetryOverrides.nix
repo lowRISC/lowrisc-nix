@@ -19,6 +19,10 @@
     chipwhisperer = ["setuptools"];
     siphash = ["setuptools"];
     tockloader = ["setuptools"];
+    lib-detect-testenv = ["setuptools"];
+    cli-exit-tools = ["setuptools"];
+    pathlib3x = ["setuptools"];
+    typing-utils = ["setuptools"];
   };
   buildreqs-overlay = (
     final: prev:

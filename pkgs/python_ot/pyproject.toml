@@ -9,7 +9,7 @@ description = "Open-source hardware root-of-trust"
 authors = []
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.10"
 
 # Polyfill libraries
 importlib-resources = {version = "1.4.0"}
