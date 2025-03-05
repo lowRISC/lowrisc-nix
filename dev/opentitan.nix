@@ -108,9 +108,11 @@ in
         ++ extraPkgs;
     extraOutputsToInstall = ["dev"];
 
+    # Some Bazel downloaded binary ship their own openssl, which try to find files in this location,
+    # So symlink them. They may alraedy exist (e.g. when already in an OT FHS env), so ignore if this fails.
     preExecHook = ''
-      ln -s ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
-      ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem
+      ln -s ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf 2>/dev/null
+      ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem 2>/dev/null
     '';
 
     profile = ''
