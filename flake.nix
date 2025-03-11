@@ -8,10 +8,22 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     flake-utils.url = "github:numtide/flake-utils";
 
-    poetry2nix = {
-      url = "github:nix-community/poetry2nix";
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
+    };
+
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+    };
+
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
     };
   };
 
@@ -29,6 +41,7 @@
     no_system_outputs = {
       lib = {
         poetryOverrides = import ./lib/poetryOverrides.nix;
+        pyprojectOverrides = import ./lib/pyprojectOverrides.nix;
         doc = import ./lib/doc.nix;
         buildFHSEnvOverlay = import ./lib/buildFHSEnvOverlay.nix;
       };

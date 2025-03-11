@@ -2,7 +2,6 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Files: *.lock
        *.patch
-       pkgs/python_ot/poetry-git-overlay.nix
        README.md
        **/README.md
 Copyright: lowRISC contributors
