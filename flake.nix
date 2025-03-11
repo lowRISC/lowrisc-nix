@@ -8,11 +8,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     flake-utils.url = "github:numtide/flake-utils";
 
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -29,7 +24,6 @@
     self,
     nixpkgs,
     flake-utils,
-    rust-overlay,
     ...
   } @ inputs: let
     no_system_outputs = {
@@ -44,7 +38,6 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
-          rust-overlay.overlays.default
           (final: prev: {
             buildFHSEnvOverlay = final.callPackage no_system_outputs.lib.buildFHSEnvOverlay {};
           })
