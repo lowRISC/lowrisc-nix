@@ -1,4 +1,4 @@
-From f6009299a4ba89453636424f90075a9c58f7d7d9 Mon Sep 17 00:00:00 2001
+From 7708c9b480cfca236536992be1190c94e7652163 Mon Sep 17 00:00:00 2001
 From: Gary Guo <gary.guo@lowrisc.org>
 Date: Mon, 5 Aug 2024 12:44:11 +0100
 Subject: [PATCH 1/2] Fix size of symlinks
@@ -15,7 +15,7 @@ Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
  1 file changed, 4 insertions(+)
 
 diff --git a/internal/fs/inode/symlink.go b/internal/fs/inode/symlink.go
-index eaa3a1667..5c66a826c 100644
+index 8a271e976..796f42bce 100644
 --- a/internal/fs/inode/symlink.go
 +++ b/internal/fs/inode/symlink.go
 @@ -84,6 +84,10 @@ func NewSymlinkInode(
@@ -30,7 +30,8 @@ index eaa3a1667..5c66a826c 100644
  		target: m.Metadata[SymlinkMetadataKey],
  	}
 
-From 5f01c89e9da7210c4023cd270f8cf43935c6a4ca Mon Sep 17 00:00:00 2001
+
+From 069469f24467164c0f84eedce9a4ed1393379a99 Mon Sep 17 00:00:00 2001
 From: Gary Guo <gary.guo@lowrisc.org>
 Date: Sat, 3 Aug 2024 21:44:47 +0100
 Subject: [PATCH 2/2] Enable kernel symlink caching
@@ -48,13 +49,13 @@ Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/cmd/mount.go b/cmd/mount.go
-index 8096838ac..ec118db42 100644
+index aee2431cc..a4d91cdf9 100644
 --- a/cmd/mount.go
 +++ b/cmd/mount.go
-@@ -165,6 +165,9 @@ func getFuseMountConfig(fsName string, newConfig *cfg.Config) *fuse.MountConfig
- 		// access two files under same directory parallely, then the lookups also
- 		// happen parallely.
+@@ -171,6 +171,9 @@ func getFuseMountConfig(fsName string, newConfig *cfg.Config) *fuse.MountConfig
  		EnableParallelDirOps: !(newConfig.FileSystem.DisableParallelDirops),
+ 		// We disable write-back cache when streaming writes are enabled.
+ 		DisableWritebackCaching: newConfig.Write.EnableStreamingWrites,
 +		// Symlink target is not mutable (removing and re-creating would cause a different
 +		// inode to be created), so it's safe to enable symlink caching.
 +		EnableSymlinkCaching: true,
