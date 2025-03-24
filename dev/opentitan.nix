@@ -67,11 +67,15 @@ in
           # Needed by sw/host/cryptotest/testvectors/data/BUILD
           unzip
 
+          # Needed by OT-lib xmodem tests
+          lrzsz
+
           # Bazel downloads Rust compilers which are not patchelfed and they need this.
           zlib
           openssl
           curl
           util-linux # flock for bazelisk
+          file # needed by rules_rust
 
           gcc-patched
           pkg-config-patched
