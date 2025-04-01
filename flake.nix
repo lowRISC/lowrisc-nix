@@ -81,7 +81,7 @@
         cheriot = pkgs.mkShell {
           name = "cheriot";
           packages =
-            (with lowriscPkgs; [llvm_cheriot xmake])
+            (with lowriscPkgs; [llvm-cheriot xmake])
             ++ (with pkgs; [
               gnumake
               magic-enum
