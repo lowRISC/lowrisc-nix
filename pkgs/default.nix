@@ -18,7 +18,7 @@
 
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
-  llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
+  llvm-cheriot = pkgs.callPackage ./llvm-cheriot.nix {};
   xmake = pkgs.callPackage ./xmake {};
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
