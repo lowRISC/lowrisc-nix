@@ -56,7 +56,7 @@
           })
         ];
       };
-      lowrisc_pkgs = import ./pkgs {inherit pkgs inputs;};
+      lowriscPkgs = import ./pkgs {inherit pkgs inputs;};
     in {
       checks = {
         license = pkgs.stdenv.mkDerivation {
@@ -73,15 +73,15 @@
           '';
         };
       };
-      packages = flake-utils.lib.filterPackages system lowrisc_pkgs;
+      packages = flake-utils.lib.filterPackages system lowriscPkgs;
       devShells = {
         opentitan = pkgs.callPackage ./dev/opentitan.nix {
-          inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot python_ot verible_ot;
+          inherit (lowriscPkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot python_ot verible_ot;
         };
         cheriot = pkgs.mkShell {
           name = "cheriot";
           packages =
-            (with lowrisc_pkgs; [llvm_cheriot xmake])
+            (with lowriscPkgs; [llvm_cheriot xmake])
             ++ (with pkgs; [
               gnumake
               magic-enum
@@ -89,7 +89,7 @@
             ]);
         };
         caliptra = pkgs.callPackage ./dev/caliptra.nix {
-          inherit (lowrisc_pkgs) verilator_caliptra riscv64-gcc_caliptra;
+          inherit (lowriscPkgs) verilator_caliptra riscv64-gcc_caliptra;
         };
       };
       formatter = pkgs.alejandra;
