@@ -6,7 +6,7 @@
   ncurses5-fhs,
   ncurses6-fhs,
   bazel_ot,
-  python_ot,
+  python-ot,
   verilator_ot,
   verible_ot,
   edaTools ? [],
@@ -18,7 +18,7 @@
   ...
 }: let
   # These dependencies are required for building user DPI C/C++ code, and cosimulation models.
-  edaExtraDeps = with pkgs; [elfutils openssl python_ot];
+  edaExtraDeps = with pkgs; [elfutils openssl python-ot];
 
   gcc-patched = wrapCCWith {
     cc = gcc-unwrapped;
@@ -52,7 +52,7 @@ in
 
           # Python dependencies
           uv
-          python_ot
+          python-ot
 
           # For serde-annotate which can be built with just cargo
           rustup

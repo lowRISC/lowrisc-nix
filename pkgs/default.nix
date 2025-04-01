@@ -12,7 +12,7 @@
 
   # OpenTitan packages
   verilator_ot = import ./verilator {inherit pkgs;};
-  python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
+  python-ot = pkgs.callPackage ./python-ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
   verible_ot = pkgs.callPackage ./verible.nix {};
 
