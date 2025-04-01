@@ -5,7 +5,7 @@
   pkgs,
   ncurses5-fhs,
   ncurses6-fhs,
-  bazel_ot,
+  bazelisk,
   python-ot,
   verilator_ot,
   verible_ot,
@@ -46,7 +46,7 @@ in
     targetPkgs = _:
       with pkgs;
         [
-          bazel_ot
+          bazelisk
           verilator_ot
           verible_ot
 

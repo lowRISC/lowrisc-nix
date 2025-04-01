@@ -13,7 +13,7 @@
   # OpenTitan packages
   verilator_ot = import ./verilator {inherit pkgs;};
   python-ot = pkgs.callPackage ./python-ot {inherit inputs;};
-  bazel_ot = pkgs.callPackage ./bazel_ot {};
+  bazelisk = pkgs.callPackage ./bazelisk {};
   verible_ot = pkgs.callPackage ./verible.nix {};
 
   # CherIoT packages
