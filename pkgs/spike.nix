@@ -11,22 +11,15 @@
 # its Design Verification (DV) environment.
 spike.overrideAttrs (_: prev: {
   pname = "spike-ibex-cosim";
-  version = "0.5";
+  version = "0.5-dev";
 
   src = fetchFromGitHub {
     owner = "lowRISC";
     repo = "riscv-isa-sim";
-    rev = "ibex-cosim-v0.5";
-    sha256 = "sha256-LK/IXmRHrGxaMRudcUYmeZV5eXU8eH7ruIw7kliumdY=";
+    # Changes for cosimulation currently track the head of the 'ibex-cosim' branch.
+    rev = "39612f93837122a980395487f55b2d97d29d70c1";
+    sha256 = "sha256-GjOaaBggqU0eNXL2wsATNDaSEjVi6Kwaj8y2khx+4gA=";
   };
-
-  patches = [
-    (fetchpatch {
-      name = "fesvr-fix-compilation-with-gcc-13.patch";
-      url = "https://github.com/riscv-software-src/riscv-isa-sim/commit/0a7bb5403d0290cea8b2356179d92e4c61ffd51d.patch";
-      hash = "sha256-JUMTbGawvLkoOWKkruzLzUFQytVR3wqTlGu/eegRFEE=";
-    })
-  ];
 
   configureFlags = (prev.configureFlags or []) ++ ["--enable-commitlog" "--enable-misaligned"];
 })
