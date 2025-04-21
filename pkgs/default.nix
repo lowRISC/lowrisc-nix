@@ -12,13 +12,13 @@
 
   # OpenTitan packages
   verilator_ot = import ./verilator {inherit pkgs;};
-  python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
-  bazel_ot = pkgs.callPackage ./bazel_ot {};
+  python-ot = pkgs.callPackage ./python-ot {inherit inputs;};
+  bazelisk = pkgs.callPackage ./bazelisk {};
   verible_ot = pkgs.callPackage ./verible.nix {};
 
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
-  llvm_cheriot = pkgs.callPackage ./llvm_cheriot.nix {};
+  llvm-cheriot = pkgs.callPackage ./llvm-cheriot.nix {};
   xmake = pkgs.callPackage ./xmake {};
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
