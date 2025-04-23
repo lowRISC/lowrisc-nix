@@ -29,6 +29,7 @@
   gcsfuse = pkgs.callPackage ./gcsfuse {};
   gcs-fuse-csi-driver-sidecar-mounter = pkgs.callPackage ./gcs-fuse-csi-driver-sidecar-mounter.nix {inherit gcsfuse;};
   container-hotplug = pkgs.callPackage ./container-hotplug {};
+  nebula = pkgs.callPackage ./nebula.nix {};
 
   surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
