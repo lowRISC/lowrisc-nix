@@ -106,7 +106,7 @@ jobs:
       - name: Setup Cache
         if: github.event_name != 'pull_request'
         run: |
-          nix profile install nixpkgs#attic-client
+          nix profile install github:NixOS/nixpkgs/nixos-24.11#attic-client
           attic login --set-default lowrisc https://nix-cache.lowrisc.org/ ${{ secrets.NIX_CACHE_TOKEN }}
 
       - name: Build
