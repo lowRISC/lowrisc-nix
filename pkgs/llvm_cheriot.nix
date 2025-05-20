@@ -33,6 +33,6 @@ stdenv.mkDerivation rec {
   meta = {
     description = "The clang/LLVM compiler with CHERIoT support.";
     homepage = "https://github.com/CHERIoT-Platform/llvm-project";
-    license = lib.licenses.asl20-llvm;
+    license = lld.meta.license;
   };
 }

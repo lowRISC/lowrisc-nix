@@ -31,7 +31,6 @@
   container-hotplug = pkgs.callPackage ./container-hotplug {};
   nebula = pkgs.callPackage ./nebula.nix {};
 
-  surfer = pkgs.callPackage ./surfer/default.nix {};
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
   sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
