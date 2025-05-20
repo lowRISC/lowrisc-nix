@@ -21,7 +21,7 @@
     };
   };
 })
-.overrideAttrs rec {
+.overrideAttrs (prev: rec {
   version = "5.012";
   src = fetchFromGitHub {
     owner = "verilator";
@@ -29,8 +29,13 @@
     rev = "v${version}";
     sha256 = "sha256-Y6GkIgkauayJmGhOQg2kWjbcxYVIob6InMopv555Lb8=";
   };
-  patches = [];
+  # New verilator uses driver.py now, this old version still uses driver.pl.
+  postPatch =
+    prev.postPatch
+    + ''
+      patchShebangs test_regress/driver.pl
+    '';
   meta = {
     broken = gcc12Stdenv.isDarwin;
   };
-}
+})
