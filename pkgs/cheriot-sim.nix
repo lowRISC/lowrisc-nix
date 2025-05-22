@@ -15,21 +15,18 @@
   z3,
   darwin,
 }: let
-  sail = ocamlPackages.sail.overrideAttrs (prev: {
-    # On MacOS sail needs to access the codesign package.
-    nativeBuildInputs = prev.nativeBuildInputs ++ lib.optional stdenv.isDarwin darwin.sigtool;
-  });
+  inherit (ocamlPackages) sail;
 in
   stdenv.mkDerivation rec {
     pname = "cheriot-sim";
-    version = "e5038a0";
+    version = "ade1ab2";
 
     src = fetchFromGitHub {
       owner = "microsoft";
       repo = "cheriot-sail";
-      rev = "e5038a0ec5fcdf2f672d0a7ddf8446225fd86cf7";
+      rev = "ade1ab26dea99e5123477a2fa3563fd21e555470";
       fetchSubmodules = true;
-      hash = "sha256-umMN2ktOeV2Queocgi8qlYO464v/98+uTgbCkO9yLBA=";
+      hash = "sha256-t/ABzvKc1W2MNkBgj4kZz0hpRONyzdM0YvD3YZQJUBE=";
     };
 
     buildInputs = [
@@ -44,16 +41,10 @@ in
       z3
     ];
 
-    postPatch =
-      ''
-        for file in riscv_patches/*.patch; do
-          (cd sail-riscv; patch -p1 < "../$file")
-        done
-      ''
-      + lib.optionalString stdenv.isDarwin ''
-        # If LTO is enabled, LLVM bitcode is produced and linking produces unrecognized file error.
-        substituteInPlace Makefile --replace " -flto" ""
-      '';
+    postPatch = lib.optionalString stdenv.isDarwin ''
+      # If LTO is enabled, LLVM bitcode is produced and linking produces unrecognized file error.
+      substituteInPlace Makefile --replace-fail " -flto=auto" ""
+    '';
 
     makeFlags = [
       "SAIL=${sail}/bin/sail"
