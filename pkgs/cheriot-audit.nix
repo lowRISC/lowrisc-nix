@@ -8,14 +8,13 @@
   lib,
   cmake,
   git,
-  darwin,
 }: let
   # Source dependencies of cheriot-audit
   regocpp = fetchFromGitHub {
     owner = "microsoft";
     repo = "rego-cpp";
-    rev = "cb967637dbf7cee25117203bbdf9c10b62dfb25a";
-    hash = "sha256-0JLnk+qr991aKWjzTrG4JE0L5e2NrcOstT8+ggjzKr0=";
+    rev = "v0.4.6"; # Bumped from cheriot-audit's pinned 0.4.5 to remove a dependency.
+    hash = "sha256-gS2HbSBMgCejA8m+TZ0/vDjBUE2cSxSujQDm+tzIbk8=";
   };
   nlohmann_json = builtins.fetchTarball {
     url = "https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz";
@@ -23,19 +22,25 @@
   };
 
   # Source dependencies of rego-cpp
+  cmake_utils = fetchFromGitHub {
+    owner = "mjp41";
+    repo = "cmake_utils";
+    rev = "2bf98b5773ea7282197c823e205547d8c2e323c0";
+    hash = "sha256-BW7F30/6nOY4Q2dIlROfGdHp32s3QB5t7cS4QynR0G8=";
+  };
   trieste = fetchFromGitHub {
     owner = "microsoft";
     repo = "trieste";
-    rev = "58a6eeeaeda4f5c96dad30c23b2d4e3feae7a60c";
-    hash = "sha256-uCyJiNRG6R/tyhewQR4hTrO+CnEVpZmFubZMMH6mAwg=";
+    rev = "70a4d5f79cb574070ff69b2517b422c5126e2024";
+    hash = "sha256-RMQyrzZw+k6IVw6Wl0qKDZjoms55HVNBlN811fxjv7w=";
   };
 
   # Source dependencies of trieste
   snmalloc = fetchFromGitHub {
     owner = "microsoft";
     repo = "snmalloc";
-    rev = "846a926155976b07a16425352dd5fed0858c5c97";
-    hash = "sha256-Dc8CKaYPPAYfY83Nsv+KqDJoihK8zXrRacVLugWzJY4=";
+    rev = "0.7.1"; # Bumped from triesta's pinned hash to fix clang 19 build.
+    hash = "sha256-zbOaHwby8NqfLtiZUybwqaw/03xMUTdsyIGUr9pZRlo=";
   };
   re2 = fetchFromGitHub {
     owner = "google";
@@ -50,9 +55,11 @@
     hash = "sha256-emTIaoUyTINbAAn9tw1r3zLTQt58N8A1zoP+0y41yKo=";
   };
 
+  # clang 19 build on darwin is failing due to cryptic "error: implicit instantiation of undefined template 'std::char_traits<unsigned char>'" error.
+  # https://github.com/NixOS/nixpkgs/issues/339576#issuecomment-2574076670
   mkDerivation =
     if stdenv.isDarwin
-    then darwin.apple_sdk_11_0.stdenv.mkDerivation
+    then pkgs.clang18Stdenv.mkDerivation
     else stdenv.mkDerivation;
 in
   mkDerivation rec {
@@ -62,14 +69,15 @@ in
     src = fetchFromGitHub {
       owner = "CHERIoT-Platform";
       repo = "cheriot-audit";
-      rev = "6120dea317a18d0ef6bf7e63a75636b0ed91ede9";
-      hash = "sha256-wk/kPvsixd0jw82GsOsg/Z/iDrcKNoMnPaCubJsUbRE=";
+      rev = "743566f85fa716f408360b55582fd9bfdb61cef4";
+      hash = "sha256-Hwl9isxtF2eX6wUcyWUBWgiw4/G/27AdtCPj9VGh43w=";
     };
 
     nativeBuildInputs = [cmake git];
     cmakeFlags = [
       "-DFETCHCONTENT_SOURCE_DIR_REGOCPP=${regocpp}"
       "-DFETCHCONTENT_SOURCE_DIR_NLOHMANN_JSON=${nlohmann_json}"
+      "-DFETCHCONTENT_SOURCE_DIR_CMAKE_UTILS=${cmake_utils}"
       "-DFETCHCONTENT_SOURCE_DIR_TRIESTE=${trieste}"
       "-DFETCHCONTENT_SOURCE_DIR_SNMALLOC=${snmalloc}"
       "-DFETCHCONTENT_SOURCE_DIR_RE2=${re2}"
