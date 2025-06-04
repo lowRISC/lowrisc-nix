@@ -79,7 +79,7 @@
       bind() {
         if [[ -d "$1" ]]; then
           ${coreutils}/bin/mkdir -p "$2"
-        else
+        elif ! [[ -e "$2" ]]; then
           ${coreutils}/bin/touch "$2"
         fi
         ${util-linux}/bin/mount --rbind "$1" "$2"
