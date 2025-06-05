@@ -33,6 +33,7 @@
       flit-core = [];
       flit-scm = [];
     };
+    fastjsonschema.setuptools = [];
     flake8.setuptools = [];
     fusesoc.setuptools = [];
     gitdb.setuptools = [];
@@ -49,12 +50,14 @@
       hatchling = [];
       hatch-fancy-pypi-readme = [];
     };
+    jsonschema2md.poetry-core = [];
     libcst.setuptools = [];
     libcst.setuptools-rust = [];
     libusb1.setuptools = [];
     lizard.setuptools = [];
     lxml.setuptools = [];
     mako.setuptools = [];
+    markdown.setuptools = [];
     markupsafe.setuptools = [];
     mccabe.setuptools = [];
     mistletoe.setuptools = [];
