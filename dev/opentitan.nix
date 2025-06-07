@@ -80,6 +80,8 @@ in
           gcc-patched
           pkg-config-patched
 
+          numactl
+
           libxcrypt-legacy
           udev
           libftdi1
