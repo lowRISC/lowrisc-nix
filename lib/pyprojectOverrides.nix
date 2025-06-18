@@ -45,6 +45,7 @@
       hatch-vcs = [];
     };
     isort.poetry-core = [];
+    importlib-resources.setuptools = [];
     jinja2.flit-core = [];
     jsonschema = {
       hatchling = [];
