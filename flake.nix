@@ -75,9 +75,20 @@
       };
       packages = flake-utils.lib.filterPackages system lowrisc_pkgs;
       devShells = {
-        opentitan = pkgs.callPackage ./dev/opentitan.nix {
-          inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot python_ot verible_ot;
-        };
+        opentitan = let
+          branches = ["main" "earlgrey_1.0.0"];
+          genDevShell = branch:
+            pkgs.callPackage ./dev/opentitan.nix {
+              inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot verible_ot;
+              python_ot = lowrisc_pkgs.python_ot.${branch};
+            };
+          devShells = pkgs.lib.genAttrs branches (
+            branch:
+              genDevShell branch
+          );
+        in
+          devShells."main"
+          // devShells;
         cheriot = pkgs.mkShell {
           name = "cheriot";
           packages =
