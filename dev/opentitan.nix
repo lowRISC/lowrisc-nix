@@ -77,6 +77,13 @@ in
           util-linux # flock for bazelisk
           file # needed by rules_rust
 
+          # Deps for building sc_hsm
+          autoconf
+          automake
+          libtool
+          pcsclite.lib
+          gnum4
+
           gcc-patched
           pkg-config-patched
 
