@@ -51,7 +51,6 @@ in
           verible_ot
 
           # Python dependencies
-          uv
           python_ot
 
           # For serde-annotate which can be built with just cargo
