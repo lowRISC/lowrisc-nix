@@ -8,6 +8,7 @@
   #
   # This list here is long so that it supports building packages from source if possible.
   buildSystemOverrides = {
+    antlr4-python3-runtime.setuptools = [];
     anytree.setuptools = [];
     argcomplete.hatchling = [];
     attrs = {
@@ -73,6 +74,7 @@
     okonomiyaki.setuptools = [];
     packaging.flit-core = [];
     pathspec.flit-core = [];
+    peakrdl-systemrdl.setuptools = [];
     pluggy.setuptools = [];
     pluralizer.setuptools = [];
     prefixed.setuptools = [];
@@ -102,6 +104,7 @@
     six.setuptools = [];
     smmap.setuptools = [];
     soupsieve.hatchling = [];
+    systemrdl-compiler.setuptools = [];
     tabulate.setuptools = [];
     termcolor.setuptools = [];
     tockloader.setuptools = [];
