@@ -37,6 +37,7 @@
     fastjsonschema.setuptools = [];
     flake8.setuptools = [];
     fusesoc.setuptools = [];
+    git-me-the-url.setuptools = [];
     gitdb.setuptools = [];
     gitpython.setuptools = [];
     hjson.setuptools = [];
@@ -75,6 +76,7 @@
     packaging.flit-core = [];
     pathspec.flit-core = [];
     peakrdl-systemrdl.setuptools = [];
+    peakrdl-uvm.setuptools = [];
     pluggy.setuptools = [];
     pluralizer.setuptools = [];
     prefixed.setuptools = [];
