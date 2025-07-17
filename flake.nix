@@ -7,24 +7,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
-
-    pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    uv2nix = {
-      url = "github:pyproject-nix/uv2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-    };
-
-    pyproject-build-systems = {
-      url = "github:pyproject-nix/build-system-pkgs";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-      inputs.uv2nix.follows = "uv2nix";
-    };
   };
 
   nixConfig = {
@@ -37,14 +19,25 @@
     nixpkgs,
     flake-utils,
     ...
-  } @ inputs: let
+  } @ publicInputs: let
+    evalFlake = import ./lib/evalFlake.nix;
+
+    inputs =
+      (evalFlake {
+        src = ./private;
+        inputOverride = {
+          inherit nixpkgs;
+        };
+      }).inputs
+      // publicInputs;
+
     no_system_outputs = {
       lib = {
         poetryOverrides = import ./lib/poetryOverrides.nix;
         pyprojectOverrides = import ./lib/pyprojectOverrides.nix;
         doc = import ./lib/doc.nix;
         buildFHSEnvOverlay = import ./lib/buildFHSEnvOverlay.nix;
-        evalFlake = import ./lib/evalFlake.nix;
+        inherit evalFlake;
       };
     };
 
