@@ -44,6 +44,7 @@
         pyprojectOverrides = import ./lib/pyprojectOverrides.nix;
         doc = import ./lib/doc.nix;
         buildFHSEnvOverlay = import ./lib/buildFHSEnvOverlay.nix;
+        evalFlake = import ./lib/evalFlake.nix;
       };
     };
 
