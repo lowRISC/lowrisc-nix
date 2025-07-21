@@ -7,6 +7,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
+
+    # We also have some additional dependencies in private/flake.nix.
+    # They're not exposed to the user to save downstream user from having a
+    # bloating flake.lock and having to override them.
   };
 
   nixConfig = {

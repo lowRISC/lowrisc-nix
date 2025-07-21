@@ -10,3 +10,8 @@ This package repository is licensed under the [MIT License](LICENSE).
 The following important clarification made in the [`nixpkgs`](https://github.com/NixOS/nixpkgs/blob/master/README.md#license) repository applies to this repository as well:
 > MIT license does not apply to the packages built by Nixpkgs, merely to the files in this repository (the Nix expressions, build scripts, NixOS modules, etc.).
 > It also might not apply to patches included in Nixpkgs, which may be derivative works of the packages to which they apply.The aforementioned artifacts are all covered by the licenses of the respective packages.
+
+## Contributing
+
+The inputs to this flake is divided into public parts in `flake.nix` and private inputs in `private/flake.nix`.
+To update all inputs, make sure that `nix flake update` is performed in `private/flake.nix` as well.
