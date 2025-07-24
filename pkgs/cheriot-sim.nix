@@ -13,7 +13,6 @@
   pkg-config,
   gnumake,
   z3,
-  darwin,
 }: let
   inherit (ocamlPackages) sail;
 in
