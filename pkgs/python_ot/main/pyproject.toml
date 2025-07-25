@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 
 dependencies = [
   # Dependency management
-  "uv ~= 0.6",
+  "uv ~= 0.7.14",
 
   # Keep sorted
   "beautifulsoup4 ~= 4.12",
@@ -92,3 +92,6 @@ extend-exclude = [ "*vendor*" ]
 preview = true
 explicit-preview-rules = true
 extend-select = ["E", "E303", "W391"]
+
+[tool.uv.workspace]
+members = ["util/testplantool", "util/testplantool/testplanlib"]
