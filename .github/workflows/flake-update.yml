@@ -1,0 +1,54 @@
+# Copyright lowRISC contributors.
+#
+# SPDX-License-Identifier: MIT
+
+name: Flake Update
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * SUN"
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  update_flake:
+    name: Flake update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Flake update
+        run: |
+          nix flake update
+      - name: Flake private input update
+        working-directory: private
+        run: |
+          nix flake update
+
+      - name: Obtain token to create PR
+        id: pr_token
+        run: |
+          # Obtain OIDC token from GitHub
+          ID_TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://ca.lowrisc.org" | jq -r .value)
+          echo "::add-mask::$ID_TOKEN"
+          # Exchange for a token to create PR
+          PR_TOKEN=$(curl -sSf -X POST -H "Authorization: Bearer $ID_TOKEN" "https://ca.lowrisc.org/api/github/repos/${{ github.repository }}/token")
+          echo "::add-mask::$PR_TOKEN"
+          echo "pr_token=$PR_TOKEN" >> "$GITHUB_OUTPUT"
+      - name: Push changes
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
+        with:
+          # Creating branch using the GitHub Actions token; the PR token doesn't have `contents: write` permission.
+          branch-token: ${{ github.token }}
+          branch: flake-update
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          commit-message: "chore: nix flake update"
+          # Create a PR with PR token so it can trigger GitHub actions.
+          token: ${{ steps.pr_token.outputs.pr_token }}
+          title: "chore: nix flake update"
+          body: "Automated update to nix flake inputs"
