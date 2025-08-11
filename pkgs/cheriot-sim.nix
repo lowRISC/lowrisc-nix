@@ -62,7 +62,5 @@ in
       homepage = "https://github.com/microsoft/cheriot-sail";
       license = lib.licenses.bsd2;
       mainProgram = "cheriot_sim";
-      # This package is broken on x64 MacOS with SMT solver being killed error.
-      broken = stdenv.system == "x86_64-darwin";
     };
   }
