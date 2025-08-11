@@ -16,11 +16,11 @@ nebula.override (prev: {
         src = fetchFromGitHub {
           owner = "slackhq";
           repo = "nebula";
-          rev = "8536c5764565fcb0381c37772811b92c001d1b89";
-          hash = "sha256-o6/4R5qwLl00CWHlP/bdju/7k5PhlXyazB+cYIePVY0=";
+          rev = "7da79685fff9b34c30b3c6786ebf4b97b091daa1";
+          hash = "sha256-jk9aVkQe4klqeWVMop/HLxqr0flgEKiOSTBndHRAIG0=";
         };
 
-        vendorHash = "sha256-X4hnVilPFDaF6QUbjNZqvbk9Jmd+iTL2Ij7Tv5SXrbg=";
+        vendorHash = "sha256-dtjxzRRQagkXFLQGwE//apon7kFuxYJXT9KLhJS7m5k=";
 
         ldflags = ["-X main.Build=${version}"];
       });
