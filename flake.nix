@@ -100,6 +100,19 @@
         caliptra = pkgs.callPackage ./dev/caliptra.nix {
           inherit (lowrisc_pkgs) verilator_caliptra riscv64-gcc_caliptra;
         };
+        qemu = pkgs.mkShell {
+          name = "qemu";
+          buildInputs = with pkgs; [
+            pkg-config
+            ninja
+            meson
+            python3
+            glib
+            pixman
+            zlib
+            libffi
+          ];
+        };
       };
       formatter = pkgs.alejandra;
     });
