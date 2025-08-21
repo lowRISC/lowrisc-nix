@@ -90,6 +90,7 @@ in
           udev
           libftdi1
           libusb1 # needed for libftdi1 pkg-config
+          glib
 
           # Somehow if you have both then FHS env building recurses forever, so
           # symlink join them together first.
