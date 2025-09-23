@@ -18,6 +18,7 @@ in
     name = "caliptra";
 
     nativeBuildInputs = with pkgs; [
+      xxd
       verilator_caliptra
       riscv64-gcc_caliptra
       hjson
