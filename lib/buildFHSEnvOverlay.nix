@@ -33,6 +33,7 @@
   glibc,
   pkgsi686Linux,
   coreutils,
+  gnugrep,
   buildFHSEnv,
   util-linux,
 }: {
@@ -105,8 +106,15 @@
       ${coreutils}/bin/mknod /usr/include/x86_64-linux-gnu c 0 0
       ${coreutils}/bin/mknod /usr/include/i386-linux-gnu c 0 0
 
-      # Merge /usr between the FHS env and the root.
-      ${util-linux}/bin/mount none -t overlay -o lowerdir=/usr:${fhsenv}/usr:/.host-root/usr /usr
+      # Overlay /usr from FHS env on top of existing /usr.
+      USR_LOWERDIR=/usr:${fhsenv}/usr
+
+      # If we have mount points inside `/usr`, overlaying it will fail.
+      if ! ${lib.getExe gnugrep} -q ' /.host-root/usr/' /.host-root/proc/mounts; then
+        USR_LOWERDIR=$USR_LOWERDIR:/.host-root/usr
+      fi
+
+      ${util-linux}/bin/mount none -t overlay -o lowerdir=$USR_LOWERDIR /usr || ( echo "cannot mount /usr. too many level of nesting?" && exit 1 )
 
       # Mount a new /etc because we want to write ld caches.
       tmpfs /etc
