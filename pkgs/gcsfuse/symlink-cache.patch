@@ -1,24 +1,22 @@
-From 7708c9b480cfca236536992be1190c94e7652163 Mon Sep 17 00:00:00 2001
-From: Gary Guo <gary.guo@lowrisc.org>
-Date: Mon, 5 Aug 2024 12:44:11 +0100
-Subject: [PATCH 1/2] Fix size of symlinks
+commit 49183ca575ca497ee7dad1192690d7a0f6e36014
+Author: Gary Guo <gary.guo@lowrisc.org>
+Date:   Mon Aug 5 12:44:11 2024 +0100
 
-Symlink inodes are expected to have size equal to the length of its
-target. This is defined in POSIX spec.
-
-FUSE's symlink cache also expects this, so fixing this prepares the
-enabling of the symlink cache.
-
-Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
----
- internal/fs/inode/symlink.go | 4 ++++
- 1 file changed, 4 insertions(+)
+    Fix size of symlinks
+    
+    Symlink inodes are expected to have size equal to the length of its
+    target. This is defined in POSIX spec.
+    
+    FUSE's symlink cache also expects this, so fixing this prepares the
+    enabling of the symlink cache.
+    
+    Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
 
 diff --git a/internal/fs/inode/symlink.go b/internal/fs/inode/symlink.go
-index 8a271e976..796f42bce 100644
+index ffd4d3c63..f77503ee7 100644
 --- a/internal/fs/inode/symlink.go
 +++ b/internal/fs/inode/symlink.go
-@@ -84,6 +84,10 @@ func NewSymlinkInode(
+@@ -89,6 +89,10 @@ func NewSymlinkInode(
  			Atime: m.Updated,
  			Ctime: m.Updated,
  			Mtime: m.Updated,
@@ -29,36 +27,99 @@ index 8a271e976..796f42bce 100644
  		},
  		target: m.Metadata[SymlinkMetadataKey],
  	}
+diff --git a/internal/fs/inode/symlink_test.go b/internal/fs/inode/symlink_test.go
+index 7ae87917e..54cea7d49 100644
+--- a/internal/fs/inode/symlink_test.go
++++ b/internal/fs/inode/symlink_test.go
+@@ -115,5 +115,6 @@ func (t *SymlinkTest) TestAttributes() {
+ 		ExpectEq(attrs.Uid, extracted.Uid)
+ 		ExpectEq(attrs.Gid, extracted.Gid)
+ 		ExpectEq(attrs.Mode, extracted.Mode)
++		ExpectEq(attrs.Size, uint64(len("target")))
+ 	}
+ }
+commit 0c685fd2548057d363b6d05bfcf9cc040dbe6acd
+Author: Gary Guo <gary.guo@lowrisc.org>
+Date:   Sat Aug 3 21:44:47 2024 +0100
 
+    Enable kernel symlink caching
+    
+    This would provide significant savings when symlink'ed path is
+    frequently accessed.
+    
+    Since symlink target is not mutable, this is always safe regardless TTL
+    settings. (When the symlink is removed and re-created, its generatiton
+    would change so a different inode is created). However, as a precaution,
+    gate this under a flag for now.
+    
+    Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
 
-From 069469f24467164c0f84eedce9a4ed1393379a99 Mon Sep 17 00:00:00 2001
-From: Gary Guo <gary.guo@lowrisc.org>
-Date: Sat, 3 Aug 2024 21:44:47 +0100
-Subject: [PATCH 2/2] Enable kernel symlink caching
-
-This would provide significant savings when symlink'ed path is
-frequently accessed.
-
-Since symlink target is not mutable, this is always safe regardless TTL
-settings. (When the symlink is removed and re-created, its generatiton
-would change so a different inode is created).
-
-Signed-off-by: Gary Guo <gary.guo@lowrisc.org>
----
- cmd/mount.go | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/cmd/mount.go b/cmd/mount.go
-index aee2431cc..a4d91cdf9 100644
---- a/cmd/mount.go
-+++ b/cmd/mount.go
-@@ -171,6 +171,9 @@ func getFuseMountConfig(fsName string, newConfig *cfg.Config) *fuse.MountConfig
- 		EnableParallelDirOps: !(newConfig.FileSystem.DisableParallelDirops),
- 		// We disable write-back cache when streaming writes are enabled.
- 		DisableWritebackCaching: newConfig.Write.EnableStreamingWrites,
-+		// Symlink target is not mutable (removing and re-creating would cause a different
-+		// inode to be created), so it's safe to enable symlink caching.
-+		EnableSymlinkCaching: true,
+diff --git a/cfg/config.go b/cfg/config.go
+index 1bce5423b..8db19dafd 100644
+--- a/cfg/config.go
++++ b/cfg/config.go
+@@ -431,6 +431,8 @@ type FileSystemConfig struct {
+ 
+ 	ExperimentalEnableReaddirplus bool `yaml:"experimental-enable-readdirplus"`
+ 
++	ExperimentalEnableSymlinkCache bool `yaml:"experimental-enable-symlink-cache"`
++
+ 	FileMode Octal `yaml:"file-mode"`
+ 
+ 	FuseOptions []string `yaml:"fuse-options"`
+@@ -794,6 +796,12 @@ func BuildFlagSet(flagSet *pflag.FlagSet) error {
+ 		return err
  	}
  
- 	mountCfg.ErrorLogger = logger.NewLegacyLogger(logger.LevelError, "fuse: ")
++	flagSet.BoolP("experimental-enable-symlink-cache", "", false, "Allow kernel to cache symlink targets")
++
++	if err := flagSet.MarkHidden("experimental-enable-symlink-cache"); err != nil {
++		return err
++	}
++
+ 	flagSet.IntP("experimental-grpc-conn-pool-size", "", 1, "The number of gRPC channel in grpc client.")
+ 
+ 	if err := flagSet.MarkDeprecated("experimental-grpc-conn-pool-size", "Experimental flag: can be removed in a minor release."); err != nil {
+@@ -1231,6 +1239,10 @@ func BindFlags(v *viper.Viper, flagSet *pflag.FlagSet) error {
+ 		return err
+ 	}
+ 
++	if err := v.BindPFlag("file-system.experimental-enable-symlink-cache", flagSet.Lookup("experimental-enable-symlink-cache")); err != nil {
++		return err
++	}
++
+ 	if err := v.BindPFlag("gcs-connection.grpc-conn-pool-size", flagSet.Lookup("experimental-grpc-conn-pool-size")); err != nil {
+ 		return err
+ 	}
+diff --git a/cfg/params.yaml b/cfg/params.yaml
+index 0b500c602..d85877c73 100644
+--- a/cfg/params.yaml
++++ b/cfg/params.yaml
+@@ -286,6 +286,13 @@ params:
+     default: false
+     hide-flag: true
+ 
++  - config-path: "file-system.experimental-enable-symlink-cache"
++    flag-name: "experimental-enable-symlink-cache"
++    type: "bool"
++    usage: "Allow kernel to cache symlink targets"
++    default: false
++    hide-flag: true
++
+   - config-path: "file-system.file-mode"
+     flag-name: "file-mode"
+     type: "octal"
+diff --git a/cmd/mount.go b/cmd/mount.go
+index 24a951cc9..5222f7ee8 100644
+--- a/cmd/mount.go
++++ b/cmd/mount.go
+@@ -179,6 +179,9 @@ func getFuseMountConfig(fsName string, newConfig *cfg.Config) *fuse.MountConfig
+ 		// Enables ReadDirPlus, allowing the kernel to retrieve directory entries and their
+ 		// attributes in a single operation.
+ 		EnableReaddirplus: newConfig.FileSystem.ExperimentalEnableReaddirplus,
++		// Symlink target is not mutable (removing and re-creating would cause a different
++		// inode to be created), so it's safe to enable symlink caching.
++		EnableSymlinkCaching: newConfig.FileSystem.ExperimentalEnableSymlinkCache,
+ 	}
+ 
+ 	// GCSFuse to Jacobsa Fuse Log Level mapping:
