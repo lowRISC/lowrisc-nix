@@ -1,0 +1,35 @@
+commit 3463c8c886b13078da542fe1ff896772f60ba6cb
+Author: Gary Guo <gary.guo@lowrisc.org>
+Date:   Thu Oct 9 12:26:01 2025 +0100
+
+    Turn on all experimental caching knobs
+
+diff --git a/cfg/config.go b/cfg/config.go
+index 8db19dafd..e55a82696 100644
+--- a/cfg/config.go
++++ b/cfg/config.go
+@@ -778,7 +778,7 @@ func BuildFlagSet(flagSet *pflag.FlagSet) error {
+ 
+ 	flagSet.BoolP("enable-streaming-writes", "", true, "Enables streaming uploads during write file operation.")
+ 
+-	flagSet.BoolP("experimental-enable-dentry-cache", "", false, "When enabled, it sets the Dentry cache entry timeout same as metadata-cache-ttl. This enables kernel to use cached entry to map the file paths to inodes, instead of making LookUpInode calls to GCSFuse.")
++	flagSet.BoolP("experimental-enable-dentry-cache", "", true, "When enabled, it sets the Dentry cache entry timeout same as metadata-cache-ttl. This enables kernel to use cached entry to map the file paths to inodes, instead of making LookUpInode calls to GCSFuse.")
+ 
+ 	if err := flagSet.MarkHidden("experimental-enable-dentry-cache"); err != nil {
+ 		return err
+@@ -790,13 +790,13 @@ func BuildFlagSet(flagSet *pflag.FlagSet) error {
+ 		return err
+ 	}
+ 
+-	flagSet.BoolP("experimental-enable-readdirplus", "", false, "Enables ReadDirPlus capability")
++	flagSet.BoolP("experimental-enable-readdirplus", "", true, "Enables ReadDirPlus capability")
+ 
+ 	if err := flagSet.MarkHidden("experimental-enable-readdirplus"); err != nil {
+ 		return err
+ 	}
+ 
+-	flagSet.BoolP("experimental-enable-symlink-cache", "", false, "Allow kernel to cache symlink targets")
++	flagSet.BoolP("experimental-enable-symlink-cache", "", true, "Allow kernel to cache symlink targets")
+ 
+ 	if err := flagSet.MarkHidden("experimental-enable-symlink-cache"); err != nil {
+ 		return err
