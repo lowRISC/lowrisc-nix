@@ -12,13 +12,13 @@
 }: let
   mounter = buildGoModule rec {
     pname = "gcs-fuse-csi-driver-sidecar-mounter";
-    version = "1.12.3";
+    version = "1.19.4";
 
     src = fetchFromGitHub {
       owner = "googlecloudplatform";
       repo = "gcs-fuse-csi-driver";
       rev = "v${version}";
-      hash = "sha256-TmHNX9gzI7t7x5Z0ux218gzoL/BQmlDWrRvk5NThdFQ=";
+      hash = "sha256-v4TuRCq/YVl4WrIiiGuq4/TE12wkSgen7mc3rD7quf0=";
     };
     vendorHash = null;
 

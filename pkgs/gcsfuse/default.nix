@@ -3,30 +3,31 @@
 # SPDX-License-Identifier: MIT
 {
   stdenv,
-  go_1_23,
+  go_1_24,
   gcsfuse,
   fetchFromGitHub,
 }:
 gcsfuse.override (prev: {
   buildGoModule = args:
-    (prev.buildGoModule.override {go = go_1_23;}) (args
+    (prev.buildGoModule.override {go = go_1_24;}) (args
       // rec {
-        version = "2.10.0";
+        version = "3.4.0";
 
         src = fetchFromGitHub {
           owner = "googlecloudplatform";
           repo = "gcsfuse";
           rev = "v${version}";
-          hash = "sha256-gKKsUihV/YiIYbdTPjOXl/SEmi7dTAncNEAnAS/42VY=";
+          hash = "sha256-PdYHsHIlq77QnsjD1z3KliW3JHLZ0M26I4Z7v0SuvlU=";
         };
 
-        vendorHash = "sha256-/9LhIZ/KThuTI1OYfdZHfV9Ad70gw4Yii3MsE5ZVLSI=";
+        vendorHash = "sha256-w5EOHPOJLfINILrP3ipZwYUAcAJIlGw1HlVAUAzW3x4=";
 
         patches = [
           # https://github.com/GoogleCloudPlatform/gcsfuse/pull/2269
           ./dentry-cache.patch
           # https://github.com/GoogleCloudPlatform/gcsfuse/pull/2285
           ./symlink-cache.patch
+          ./turn-knob.patch
         ];
 
         meta =
