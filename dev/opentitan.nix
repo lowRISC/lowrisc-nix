@@ -9,6 +9,7 @@
   python_ot,
   verilator_ot,
   verible_ot,
+  lowrisc-toolchain-gcc-rv32imcb,
   edaTools ? [],
   wrapCCWith,
   gcc-unwrapped,
@@ -58,6 +59,8 @@ in
 
           # For the OTBN simulator
           ninja
+          # 'as' needed for the OTBN assembler
+          lowrisc-toolchain-gcc-rv32imcb
 
           # dvsim uses git for logging/tagging purposes
           gitFull
