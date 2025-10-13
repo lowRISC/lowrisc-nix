@@ -77,7 +77,7 @@
           branches = ["main" "earlgrey_1.0.0"];
           genDevShell = branch:
             pkgs.callPackage ./dev/opentitan.nix {
-              inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot verible_ot;
+              inherit (lowrisc_pkgs) ncurses5-fhs ncurses6-fhs bazel_ot verilator_ot verible_ot lowrisc-toolchain-gcc-rv32imcb;
               python_ot = lowrisc_pkgs.python_ot.${branch};
             };
           devShells = pkgs.lib.genAttrs branches (
