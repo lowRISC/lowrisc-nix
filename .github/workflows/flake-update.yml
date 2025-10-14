@@ -23,12 +23,18 @@ jobs:
         uses: cachix/install-nix-action@v31
 
       - name: Flake update
+        id: update
         run: |
-          nix flake update
+          echo "LOG<<EOF" >> "$GITHUB_OUTPUT"
+          nix flake update 2>&1 | tee -a "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Flake private input update
+        id: private_update
         working-directory: private
         run: |
-          nix flake update
+          echo "LOG<<EOF" >> "$GITHUB_OUTPUT"
+          nix flake update 2>&1 | tee -a "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Obtain token to create PR
         id: pr_token
@@ -40,6 +46,7 @@ jobs:
           PR_TOKEN=$(curl -sSf -X POST -H "Authorization: Bearer $ID_TOKEN" "https://ca.lowrisc.org/api/github/repos/${{ github.repository }}/token")
           echo "::add-mask::$PR_TOKEN"
           echo "pr_token=$PR_TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Push changes
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
@@ -51,4 +58,12 @@ jobs:
           # Create a PR with PR token so it can trigger GitHub actions.
           token: ${{ steps.pr_token.outputs.pr_token }}
           title: "chore: nix flake update"
-          body: "Automated update to nix flake inputs"
+          body: |
+            Automated update to nix flake inputs
+
+            Logs:
+            ```
+            ${{ steps.update.outputs.LOG }}
+
+            ${{ steps.private_update.outputs.LOG }}
+            ```
