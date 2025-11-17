@@ -114,6 +114,10 @@
             libffi
           ];
         };
+        llvm_cheri = pkgs.mkShell {
+          name = "llvm_cheri";
+          packages = with lowrisc_pkgs; [llvm_cheri];
+        };
       };
       formatter = pkgs.alejandra;
     });
