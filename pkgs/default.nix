@@ -24,6 +24,9 @@
 
   verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {inherit inputs;};
 
+  # Cheri
+  llvm_cheri = pkgs.callPackage ./llvm_cheri.nix {};
+
   # IT packages
   gcsfuse = pkgs.callPackage ./gcsfuse {};
   gcs-fuse-csi-driver-sidecar-mounter = pkgs.callPackage ./gcs-fuse-csi-driver-sidecar-mounter.nix {inherit gcsfuse;};
