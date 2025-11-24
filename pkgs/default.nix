@@ -23,6 +23,9 @@
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
 
+  # Cheri
+  llvm_cheri = pkgs.callPackage ./llvm_cheri.nix {};
+
   verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {};
 
   # IT packages
