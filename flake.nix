@@ -5,7 +5,7 @@
   description = "lowRISC CIC's Nix Packages and Environments";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-utils.url = "github:numtide/flake-utils";
 
     # We also have some additional dependencies in private/flake.nix.
