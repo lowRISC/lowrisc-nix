@@ -16,11 +16,15 @@
       hash = "sha256-nsamrlnY6nPtACX6Dfb+1yHpxuNhD0N4aidY3wSiIwE=";
     };
     propagatedBuildInputs = with python3Packages; [
+      setuptools
+      setuptools-scm
       antlr4-python3-runtime
       colorama
+      markdown
     ];
     enableParallelBuilding = true;
     doCheck = false;
+    format = "pyproject";
     meta = {
       description = "SystemRDL 2.0 language compiler front-end ";
       homepage = "https://systemrdl-compiler.readthedocs.io";
