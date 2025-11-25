@@ -6,12 +6,12 @@
   fetchFromGitHub,
   verilator,
   inputs,
-  system,
+  stdenv,
 }: let
   # Use legacy Nixpkgs for
   # * GCC 12: needed to build verilator and is not supported anymore in nixpkgs 25.11.
   # * CMake 3: nixpkgs has CMake 4 which removes support for CMake <3.5. 25.05 uses 3.31 which maintains the support.
-  old-pkgs = import inputs.nixpkgs-2505 {inherit system;};
+  old-pkgs = import inputs.nixpkgs-2505 {inherit (stdenv) system;};
   inherit (old-pkgs) cmake gcc12Stdenv;
 in
   (verilator.override {

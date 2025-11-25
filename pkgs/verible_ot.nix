@@ -7,7 +7,6 @@
   fetchFromGitHub,
   verible,
   bazel_7,
-  system,
   stdenv,
 }:
 verible.override (prev: {
@@ -34,8 +33,8 @@ verible.override (prev: {
               aarch64-darwin = "sha256-FoTsIEF+HAFRrUmiuiPjxZnm9hirq25qgmP5JhSXiEA=";
             }
       .${
-              system
-            } or (throw "No hash for system: ${system}");
+              stdenv.system
+            } or (throw "No hash for system: ${stdenv.system}");
         };
 
         patches = [];
