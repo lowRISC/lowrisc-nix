@@ -13,8 +13,8 @@
   regocpp = fetchFromGitHub {
     owner = "microsoft";
     repo = "rego-cpp";
-    rev = "v0.4.6"; # Bumped from cheriot-audit's pinned 0.4.5 to remove a dependency.
-    hash = "sha256-gS2HbSBMgCejA8m+TZ0/vDjBUE2cSxSujQDm+tzIbk8=";
+    rev = "v1.0.1";
+    hash = "sha256-vD0k5oZEbkiUhcNrugFvltrQPvuRY/OEjrbPHHyiJYo=";
   };
   nlohmann_json = builtins.fetchTarball {
     url = "https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz";
@@ -31,16 +31,16 @@
   trieste = fetchFromGitHub {
     owner = "microsoft";
     repo = "trieste";
-    rev = "70a4d5f79cb574070ff69b2517b422c5126e2024";
-    hash = "sha256-RMQyrzZw+k6IVw6Wl0qKDZjoms55HVNBlN811fxjv7w=";
+    rev = "7aa3079fbdb02229e473785f53414417916b26e3";
+    hash = "sha256-AHtzBqtEvTyUvHdfKBsm5VHogJYYstqXrpAAntzawag=";
   };
 
   # Source dependencies of trieste
   snmalloc = fetchFromGitHub {
     owner = "microsoft";
     repo = "snmalloc";
-    rev = "0.7.1"; # Bumped from triesta's pinned hash to fix clang 19 build.
-    hash = "sha256-zbOaHwby8NqfLtiZUybwqaw/03xMUTdsyIGUr9pZRlo=";
+    rev = "b8e28be14b3fd98e27c2fe87c0296570f6d3990e";
+    hash = "sha256-m4B+zGNIsQUr+EueTDVloyycVpYe8rwLq1oa7843oxc=";
   };
   re2 = fetchFromGitHub {
     owner = "google";
@@ -51,26 +51,19 @@
   cli11 = fetchFromGitHub {
     owner = "CLIUtils";
     repo = "CLI11";
-    rev = "b9be5b9444772324459989177108a6a65b8b2769";
-    hash = "sha256-emTIaoUyTINbAAn9tw1r3zLTQt58N8A1zoP+0y41yKo=";
+    rev = "4160d259d961cd393fd8d67590a8c7d210207348";
+    hash = "sha256-73dfpZDnKl0cADM4LTP3/eDFhwCdiHbEaGRF7ZyWsdQ=";
   };
-
-  # clang 19 build on darwin is failing due to cryptic "error: implicit instantiation of undefined template 'std::char_traits<unsigned char>'" error.
-  # https://github.com/NixOS/nixpkgs/issues/339576#issuecomment-2574076670
-  mkDerivation =
-    if stdenv.isDarwin
-    then pkgs.clang18Stdenv.mkDerivation
-    else stdenv.mkDerivation;
 in
-  mkDerivation rec {
+  stdenv.mkDerivation rec {
     pname = "cheriot-audit";
-    version = "0.0.0";
+    version = "0-unstable-2025-11-04";
 
     src = fetchFromGitHub {
       owner = "CHERIoT-Platform";
       repo = "cheriot-audit";
-      rev = "743566f85fa716f408360b55582fd9bfdb61cef4";
-      hash = "sha256-Hwl9isxtF2eX6wUcyWUBWgiw4/G/27AdtCPj9VGh43w=";
+      rev = "79d91acd2a57e57ab0b753f50c094a9217fc5ebd";
+      hash = "sha256-cTO1MvAgSidvwmCPodnSRwy0ILfR3npnBIjLt+3z4QE=";
     };
 
     nativeBuildInputs = [cmake git];
