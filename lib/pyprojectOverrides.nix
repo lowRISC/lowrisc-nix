@@ -145,6 +145,9 @@
     };
     lxml = prev.lxml.overrideAttrs (old: {
       buildInputs = (old.buildInputs or []) ++ (with pkgs; [libxslt libxml2 libz]);
+
+      # GCC 14+ has this as the default.
+      env.NIX_CFLAGS_COMPILE = "-Wno-error=incompatible-pointer-types";
     });
     ninja = prev.ninja.overrideAttrs (old: {
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [cmake]);
