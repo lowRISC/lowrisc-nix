@@ -23,7 +23,7 @@
   cheriot-sim = pkgs.callPackage ./cheriot-sim.nix {};
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
 
-  verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {};
+  verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {inherit inputs;};
 
   # IT packages
   gcsfuse = pkgs.callPackage ./gcsfuse {};
