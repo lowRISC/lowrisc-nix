@@ -36,7 +36,6 @@
   sv-lang_7 = import ./sv-lang.nix {inherit pkgs;};
   veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_7;};
   peakrdl = pkgs.callPackage ./peakrdl.nix {};
-  surfer = pkgs.callPackage ./surfer.nix {};
 
   riscv64-gcc = pkgs.pkgsCross.riscv64.buildPackages.gcc;
   riscv64-gcc_caliptra = pkgs.callPackage ./riscv64-gcc_caliptra {};
