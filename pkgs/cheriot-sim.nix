@@ -18,14 +18,14 @@
 in
   stdenv.mkDerivation rec {
     pname = "cheriot-sim";
-    version = "ade1ab2";
+    version = "1.0";
 
     src = fetchFromGitHub {
       owner = "microsoft";
       repo = "cheriot-sail";
-      rev = "ade1ab26dea99e5123477a2fa3563fd21e555470";
+      rev = "b9e7ab7dc9a3d13c045410c2431977237548d92f";
       fetchSubmodules = true;
-      hash = "sha256-t/ABzvKc1W2MNkBgj4kZz0hpRONyzdM0YvD3YZQJUBE=";
+      hash = "sha256-p9LEKihJBo3mP3pxJoq7ikV1sYxNtY/2w3OVvQz+Mvk=";
     };
 
     buildInputs = [
