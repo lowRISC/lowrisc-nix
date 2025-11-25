@@ -12,7 +12,7 @@
 }:
 stdenv.mkDerivation {
   pname = "sv-bugpoint";
-  version = "0-unstable-2025-11-25-bugpoint";
+  version = "0-unstable-2025-11-25";
 
   src = fetchFromGitHub {
     owner = "antmicro";
