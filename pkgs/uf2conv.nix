@@ -21,6 +21,10 @@
       homepage = "https://github.com/makerdiary/uf2utils";
       license = lib.licenses.mit;
     };
+
+    # This project only has setup.py, but pyproject will fallback to use setuptools.
+    pyproject = true;
+    build-system = with python3Packages; [setuptools];
   };
 in
   # `buildPythonApplication` sets `propagatedBuildInputs` which in turn pulls Python into path
