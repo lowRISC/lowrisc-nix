@@ -10,6 +10,9 @@ pkgs.sv-lang.overrideAttrs (prev: rec {
     sha256 = "sha256-msSc6jw2xbEZfOwtqwFEDIKcwf5SDKp+j15lVbNO98g=";
   };
 
+  # Upstream has a patch for mimalloc, which we aren't using.
+  postPatch = "";
+
   # Detrimental when using sv-lang as library.
   cmakeFlags =
     prev.cmakeFlags
@@ -23,4 +26,7 @@ pkgs.sv-lang.overrideAttrs (prev: rec {
     ++ [
       pkgs.fmt_11
     ];
+
+  # Time out specific to sv-lang 7, see https://github.com/nixos/nixpkgs/issues/451986.
+  doCheck = false;
 })
