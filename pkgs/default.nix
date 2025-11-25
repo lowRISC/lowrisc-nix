@@ -33,8 +33,8 @@
   parallel-cp = pkgs.callPackage ./parallel-cp.nix {};
 
   uf2conv = pkgs.callPackage ./uf2conv.nix {};
-  sv-lang_6 = pkgs.callPackage ./sv-lang.nix {};
-  veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_6;};
+  sv-lang_7 = import ./sv-lang.nix {inherit pkgs;};
+  veridian = pkgs.callPackage ./veridian/default.nix {inherit sv-lang_7;};
   peakrdl = pkgs.callPackage ./peakrdl.nix {};
   surfer = pkgs.callPackage ./surfer.nix {};
 

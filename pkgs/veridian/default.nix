@@ -6,12 +6,12 @@
   rustPlatform,
   pkg-config,
   openssl,
-  llvmPackages_17,
+  llvmPackages,
   verilator,
   verible,
   cmake,
   boost182,
-  sv-lang_6,
+  sv-lang_7,
 }:
 rustPlatform.buildRustPackage {
   pname = "veridian";
@@ -20,8 +20,8 @@ rustPlatform.buildRustPackage {
   src = fetchFromGitHub {
     owner = "vivekmalneedi";
     repo = "veridian";
-    rev = "e156ac3f97408c816883659035687aa704064415";
-    hash = "sha256-brILumMj2OIEVksGM4JHNkITheL6h4o7amnZ1ZRyb+M=";
+    rev = "d094c9d2fa9745b2c4430eef052478c64d5dd3b6";
+    hash = "sha256-3KjUunXTqdesvgDSeQMoXL0LRGsGQXZJGDt+xLWGovM=";
   };
 
   # We don't want the `veridian-slang`'s to `build.rs`
@@ -30,13 +30,13 @@ rustPlatform.buildRustPackage {
 
   # Verilator and Verible are used in the test suit
   nativeBuildInputs = [pkg-config cmake verilator verible];
-  buildInputs = [openssl boost182 sv-lang_6];
+  buildInputs = [openssl boost182 sv-lang_7];
 
   cargoLock.lockFile = ./Cargo.lock;
   buildFeatures = ["slang"];
 
-  LIBCLANG_PATH = "${llvmPackages_17.libclang.lib}/lib";
-  SLANG_INSTALL_PATH = "${sv-lang_6}";
+  LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
+  SLANG_INSTALL_PATH = "${sv-lang_7}";
 
   # The check doesn't build, so we don't bother checking.
   doCheck = false;
