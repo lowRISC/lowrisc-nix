@@ -70,6 +70,11 @@ jobs:
 
               if [[ $CACHED == y ]]; then
                 echo "| $ATTR | $SYSTEM | ✅ Cached |" | tee -a $GITHUB_STEP_SUMMARY
+              elif ${{ github.event_name == 'pull_request' }} && nix store path-from-hash-part $HASH; then
+                # For a pull request, additionally skip paths available locally, which means that they have
+                # been previously built successfully.
+                # Cannot do this for push as we still need to make them available to the cache.
+                echo "| $ATTR | $SYSTEM | ♻️ Built |" | tee -a $GITHUB_STEP_SUMMARY
               else
                 REBUILD+=("$(jq --null-input '{attr: $attr, system: $system}' --arg attr "$ATTR" --arg system "$SYSTEM")")
                 echo "| $ATTR | $SYSTEM | ⏳ Need Rebuild |" | tee -a $GITHUB_STEP_SUMMARY
