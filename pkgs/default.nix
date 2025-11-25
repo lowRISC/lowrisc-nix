@@ -14,7 +14,7 @@
   verilator_ot = import ./verilator {inherit pkgs;};
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
-  verible_ot = pkgs.callPackage ./verible.nix {};
+  verible_ot = pkgs.callPackage ./verible_ot.nix {};
 
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
