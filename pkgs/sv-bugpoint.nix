@@ -7,7 +7,7 @@
   cmake,
   ninja,
   sv-lang,
-  fmt_11,
+  fmt,
   python3,
 }:
 stdenv.mkDerivation {
@@ -23,7 +23,7 @@ stdenv.mkDerivation {
 
   cmakeFlags = [
     "-DFETCHCONTENT_SOURCE_DIR_SLANG=${sv-lang.src}"
-    "-DFETCHCONTENT_SOURCE_DIR_FMT=${fmt_11.src}"
+    "-DFETCHCONTENT_SOURCE_DIR_FMT=${fmt.src}"
     "-DSLANG_USE_MIMALLOC=OFF"
   ];
 

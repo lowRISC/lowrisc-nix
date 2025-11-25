@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
     # Need to obtain GCC 12 which is no longer supported.
     nixpkgs-2505.url = "github:NixOS/nixpkgs/nixos-25.05";

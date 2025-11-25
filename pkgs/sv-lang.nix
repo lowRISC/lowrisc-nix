@@ -24,7 +24,7 @@ pkgs.sv-lang.overrideAttrs (prev: rec {
   propagatedBuildInputs =
     (prev.propagatedBuildInputs or [])
     ++ [
-      pkgs.fmt_11
+      pkgs.fmt
     ];
 
   # Time out specific to sv-lang 7, see https://github.com/nixos/nixpkgs/issues/451986.
