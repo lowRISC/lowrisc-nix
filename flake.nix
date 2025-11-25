@@ -90,8 +90,9 @@
         cheriot = pkgs.mkShell {
           name = "cheriot";
           packages =
-            (with lowrisc_pkgs; [llvm_cheriot xmake])
+            (with lowrisc_pkgs; [llvm_cheriot])
             ++ (with pkgs; [
+              xmake
               gnumake
               magic-enum
               srecord
