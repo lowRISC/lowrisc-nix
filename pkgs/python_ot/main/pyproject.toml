@@ -9,9 +9,6 @@ description = "Open-source hardware root-of-trust"
 requires-python = ">=3.10"
 
 dependencies = [
-  # Dependency management
-  "uv ~= 0.7.14",
-
   # Keep sorted
   "beautifulsoup4 ~= 4.12",
   "hjson==3.1.0",
@@ -28,7 +25,7 @@ dependencies = [
   "pyyaml ~= 6.0",
   "rich==12.6.0", # maximum version compatible with Python 3.6.8 (used on CentOS7 nightly regression machines)
   "semantic_version==2.10.0",
-  "tabulate==0.8.10",
+  "tabulate~=0.9",
   "typer==0.6.1",
 
   # Dependencies: bitstreams cache
@@ -70,12 +67,10 @@ dependencies = [
   # The hardware package manager and build system.
   "fusesoc==2.4.3",
 
-  "peakrdl-systemrdl >= 1.0",
+  # Build and run tool for Design Verification flows
+  "dvsim==1.6.1",
 
-  # Development version of minimal ChipWhisperer toolchain with latest features
-  # and bug fixes. We fix the version for improved stability and manually update
-  # if necessary.
-  "chipwhisperer@https://github.com/newaetech/chipwhisperer-minimal/archive/2643131b71e528791446ee1bab7359120288f4ab.zip",
+  "peakrdl-systemrdl >= 1.0",
 ]
 
 [tool.setuptools]

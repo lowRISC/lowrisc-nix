@@ -10,6 +10,7 @@
   buildSystemOverrides = {
     antlr4-python3-runtime.setuptools = [];
     anytree.setuptools = [];
+    annotated-types.hatchling = [];
     argcomplete.hatchling = [];
     attrs = {
       hatchling = [];
@@ -28,6 +29,7 @@
     cssselect.setuptools = [];
     cssutils.setuptools = [];
     cython.setuptools = [];
+    dvsim.hatchling = [];
     edalize.setuptools = [];
     enlighten.setuptools = [];
     exceptiongroup = {
@@ -58,6 +60,7 @@
     libcst.setuptools-rust = [];
     libusb1.setuptools = [];
     lizard.setuptools = [];
+    logzero.setuptools = [];
     lxml.setuptools = [];
     mako.setuptools = [];
     markdown.setuptools = [];
@@ -84,6 +87,11 @@
     prompt-toolkit.setuptools = [];
     pycodestyle.setuptools = [];
     pycryptodome.setuptools = [];
+    pydantic = {
+      hatchling = [];
+      hatch-fancy-pypi-readme = [];
+    };
+    pydantic-core.maturin = [];
     pydriller.setuptools = [];
     pyelftools.setuptools = [];
     pyfinite.setuptools = [];
@@ -119,6 +127,7 @@
     types-tabulate.setuptools = [];
     typing-extensions.flit-core = [];
     typing-inspect.setuptools = [];
+    typing-inspection.hatchling = [];
     urllib3 = {
       hatchling = [];
       hatch-vcs = [];
@@ -161,6 +170,12 @@
     uv = prev.uv.overrideAttrs (old: {
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [rustc cargo]);
     });
+    maturin = prev.maturin.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [rustc cargo]);
+    });
+    pydantic-core = prev.pydantic-core.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [rustc cargo]);
+    });
   };
 
   preferWheelOverrides = {
@@ -173,6 +188,7 @@
     libcst = {};
     ruff = {};
     uv = {};
+    pydantic-core = {};
   };
 
   preferWheelOverlay = (
