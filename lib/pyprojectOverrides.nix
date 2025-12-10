@@ -55,7 +55,10 @@
       hatchling = [];
       hatch-fancy-pypi-readme = [];
     };
-    jsonschema2md.poetry-core = [];
+    jsonschema2md = {
+      poetry-core = [];
+      babel = [];
+    };
     libcst.setuptools = [];
     libcst.setuptools-rust = [];
     libusb1.setuptools = [];
