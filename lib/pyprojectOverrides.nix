@@ -109,6 +109,7 @@
     pyyaml.setuptools = [];
     questionary.poetry-core = [];
     requests.setuptools = [];
+    reuse.poetry-core = [];
     rich.poetry-core = [];
     ruff.maturin = [];
     semantic-version.setuptools = [];
