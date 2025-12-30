@@ -11,14 +11,13 @@
 }:
 stdenv.mkDerivation rec {
   name = "cheri-llvm";
-  version = "17.0.1.r01";
+  version = "17.0.1.r02";
   src = fetchzip {
     # We build the toolchain in another repository because derivations doesn't allow internet
     # connection, which is required by cheribuild.
     url = "https://github.com/engdoreis/cheribuild/releases/download/v${version}/cheri-std093-sdk.tar.gz";
-    hash = "sha256-/6FGm1Ot9sFZ71FIThtLV2KFjhSfnc5w32OucCZmDfc=";
+    hash = "sha256-SJsi9PYSi8UMRbHaLeR88AociKSZL1fdbOWhcqp3bE4=";
   };
-
   dontConfigure = true;
   dontBuild = true;
 
