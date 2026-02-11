@@ -29,6 +29,7 @@
     cssselect.setuptools = [];
     cssutils.setuptools = [];
     cython.setuptools = [];
+    dvplan.hatchling = [];
     dvsim.hatchling = [];
     edalize.setuptools = [];
     enlighten.setuptools = [];
