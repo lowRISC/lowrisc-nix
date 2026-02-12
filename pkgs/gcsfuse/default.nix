@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: MIT
 {
   stdenv,
-  buildGo124Module,
+  buildGoModule,
   fetchFromGitHub,
   lib,
 }:
-buildGo124Module rec {
+buildGoModule rec {
   pname = "gcsfuse";
   version = "3.4.0";
 
