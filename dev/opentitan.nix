@@ -40,6 +40,18 @@
       echo "export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig" >> $out/nix-support/utils.bash
     '';
   };
+
+  # Wrap automake's aclocal to set the default macro search path to the FHSenv pre-populated value
+  # The nixpkgs default is to use ACLOCAL_PATH to override this default, but this avoids passing another
+  # environment into the sandbox non-hermetically.
+  automake' = pkgs.automake.overrideAttrs (oldAttrs: {
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [pkgs.makeWrapper];
+    postFixup =
+      (oldAttrs.postFixup or "")
+      + ''
+        wrapProgram $out/bin/aclocal --add-flags "--system-acdir=/usr/share/aclocal"
+      '';
+  });
 in
   (pkgs.buildFHSEnvOverlay {
     pname = "opentitan";
@@ -81,7 +93,7 @@ in
 
           # Deps for building sc_hsm
           autoconf
-          automake
+          automake'
           libtool
           pcsclite.lib
           gnum4
