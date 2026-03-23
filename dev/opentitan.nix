@@ -91,6 +91,11 @@ in
           util-linux # flock for bazelisk
           file # needed by rules_rust
 
+          # Provide static libraries needed for statically-linking verilator models and OTT
+          zlib.static
+          glibc.static
+          (openssl.override {static = true;})
+
           # Deps for building sc_hsm
           autoconf
           automake'
@@ -104,7 +109,7 @@ in
           libxcrypt-legacy
           udev
           libftdi1
-          libusb1 # needed for libftdi1 pkg-config
+          (libusb1.override {withStatic = true;}) # needed for libftdi1 pkg-config
           glib
 
           # Somehow if you have both then FHS env building recurses forever, so
