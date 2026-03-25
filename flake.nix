@@ -19,12 +19,13 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     flake-utils,
     ...
   } @ publicInputs: let
     evalFlake = import ./lib/evalFlake.nix;
+
+    isNixOS = builtins.pathExists "/etc/NIXOS";
 
     inputs =
       (evalFlake {
@@ -50,7 +51,10 @@
         inherit system;
         overlays = [
           (final: prev: {
-            buildFHSEnvOverlay = final.callPackage no_system_outputs.lib.buildFHSEnvOverlay {};
+            buildFHSEnvOverlay =
+              if isNixOS
+              then final.buildFHSEnv
+              else final.callPackage no_system_outputs.lib.buildFHSEnvOverlay {};
           })
         ];
       };
