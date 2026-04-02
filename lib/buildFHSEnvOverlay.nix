@@ -127,9 +127,17 @@
           /etc/profile | /etc/profile.d)
             continue
             ;;
-          # Needs special treatment to make /etc/ssl writable (needed in OT devShell for Bazel)
+          # /etc/ssl needs to be writable so preExecHook and similar can create new
+          # files within it (e.g. symlinking CA certs or openssl.cnf). A writable
+          # overlay keeps all host content visible without copying, which avoids
+          # permission errors on restricted subdirectories such as /etc/ssl/private
+          # that exist (mode 700, root-owned) on most Linux distributions.
           /etc/ssl)
-            ${coreutils}/bin/cp -rP $i $path
+            ${coreutils}/bin/mkdir -p /etc/ssl
+            if [[ -d "$i" ]]; then
+              ${coreutils}/bin/mkdir -p /etc/.ssl-overlay/upper /etc/.ssl-overlay/work
+              ${util-linux}/bin/mount none -t overlay -o lowerdir="$i",upperdir=/etc/.ssl-overlay/upper,workdir=/etc/.ssl-overlay/work /etc/ssl
+            fi
             continue
             ;;
           # Populated later
