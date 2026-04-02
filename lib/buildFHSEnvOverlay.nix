@@ -129,7 +129,19 @@
             ;;
           # Needs special treatment to make /etc/ssl writable (needed in OT devShell for Bazel)
           /etc/ssl)
-            ${coreutils}/bin/cp -rP $i $path
+            ${coreutils}/bin/mkdir -p "$path"
+
+            # Do not copy /etc/ssl/private. Many non-NixOS systems restrict access to this,
+            # and so copying it can fail for unprivileged users. Instead, explicitly copy
+            # across the certs and public config which we need.
+            if [ -d "$i/certs" ]; then
+              ${coreutils}/bin/cp -rP "$i/certs" "$path/"
+            fi
+
+            if [ -f "$i/openssl.cnf" ]; then
+              ${coreutils}/bin/cp -P "$i/openssl.cnf" "$path/"
+            fi
+
             continue
             ;;
           # Populated later
