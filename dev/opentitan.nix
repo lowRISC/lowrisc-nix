@@ -139,11 +139,36 @@ in
         ++ extraPkgs;
     extraOutputsToInstall = ["dev"];
 
-    # Some Bazel downloaded binary ship their own openssl, which try to find files in this location,
-    # So symlink them. They may alraedy exist (e.g. when already in an OT FHS env), so ignore if this fails.
+    # Bazel downloads pre-built host tools (Rust toolchain, curl, etc.) that were
+    # compiled on a standard FHS Linux system with OPENSSLDIR=/etc/ssl baked in at
+    # compile time. These unpatched binaries look for openssl.cnf and the CA trust
+    # bundle at /etc/ssl regardless of any environment variables, since Bazel's
+    # sandbox strips most env vars (including SSL_CERT_FILE) before running actions.
     preExecHook = ''
-      ln -s ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf 2>/dev/null
-      ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem 2>/dev/null
+      # Only populate openssl.cnf if it is absent or a dangling symlink, indicated
+      # by [ -e ] returning false (it follows symlinks, so a dangling symlink to a
+      # garbage-collected Nix store path on NixOS will also fail this test).
+      # A valid host file is preserved to retain any system-specific crypto policy:
+      # Fedora/RHEL include /etc/crypto-policies/back-ends/opensslcnf.config via
+      # an .include directive, and Debian/Ubuntu configure SECLEVEL and MinProtocol.
+      if ! [ -e /etc/ssl/openssl.cnf ]; then
+        ln -sf ${pkgs.openssl.out}/etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
+      fi
+
+      # Populate /etc/ssl/cert.pem if absent or dangling, trying CA bundle
+      # locations used by common distributions in order of preference.
+      if ! [ -e /etc/ssl/cert.pem ]; then
+        for ca_bundle in \
+          /etc/ssl/certs/ca-certificates.crt \
+          /etc/pki/tls/certs/ca-bundle.crt \
+          /etc/ssl/certs/ca-bundle.crt \
+          /etc/ssl/ca-bundle.pem; do
+          if [ -f "$ca_bundle" ]; then
+            ln -sf "$ca_bundle" /etc/ssl/cert.pem
+            break
+          fi
+        done
+      fi
     '';
 
     profile = ''
