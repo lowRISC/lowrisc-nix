@@ -17,6 +17,10 @@ inputs:
     description: lowRISC CA endpoint from which to try and obtain a token.
     type: string
     default: "https://ca.lowrisc.org/api/github/repos/${{ github.repository }}/token"
+  ca_api_method:
+    description: HTTP method to use when requesting a token from the lowRISC CA endpoint.
+    type: string
+    default: "POST"
 
 runs:
   using: "composite"
@@ -30,7 +34,7 @@ runs:
         ID_TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ inputs.audience }}" | jq -r .value)
         echo "::add-mask::$ID_TOKEN"
         # Now use the JWT token to request the lowRISC CA to provide a lowrisc-ci app installation access token suitable for our action
-        ACCESS_TOKEN=$(curl -sSf -X POST -H "Authorization: Bearer $ID_TOKEN" ${{ inputs.ca_api_endpoint }})
+        ACCESS_TOKEN=$(curl -sSf -X ${{ inputs.ca_api_method }} -H "Authorization: Bearer $ID_TOKEN" ${{ inputs.ca_api_endpoint }})
         echo "::add-mask::$ACCESS_TOKEN"
         echo "token=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
 

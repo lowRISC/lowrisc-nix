@@ -116,6 +116,7 @@ jobs:
         uses: ./.github/actions/lowrisc_ci_app_get_token
         with:
           ca_api_endpoint: "https://ca.lowrisc.org/api/nix-caches/public/token"
+          ca_api_method: "GET"
 
       - name: Setup Cache
         if: github.event_name != 'pull_request'
