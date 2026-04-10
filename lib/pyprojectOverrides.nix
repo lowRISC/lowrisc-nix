@@ -11,6 +11,7 @@
     antlr4-python3-runtime.setuptools = [];
     anytree.setuptools = [];
     annotated-types.hatchling = [];
+    anybadge.setuptools = [];
     argcomplete.hatchling = [];
     attrs = {
       hatchling = [];
@@ -86,6 +87,7 @@
     peakrdl-uvm.setuptools = [];
     pluggy.setuptools = [];
     pluralizer.setuptools = [];
+    psutil.setuptools = [];
     prefixed.setuptools = [];
     premailer.setuptools = [];
     prompt-toolkit.setuptools = [];
@@ -184,6 +186,7 @@
   };
 
   preferWheelOverrides = {
+    anybadge = {};
     # Some problem building due to a malformed semantic version string.
     isort = {};
     # requirements.txt not distributed.
