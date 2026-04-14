@@ -110,10 +110,10 @@ jobs:
             substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
             trusted-public-keys = nix-cache.lowrisc.org-public-1:O6JLD0yXzaJDPiQW1meVu32JIDViuaPtGDfjlOopU7o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-      - name: Get a short-lived lowrisc-ci app token for pushing to the attic public nix cache
+      - name: Get a short-lived nix cache token for pushing to the attic public cache
         id: get-token
         if: github.event_name != 'pull_request'
-        uses: ./.github/actions/lowrisc_ci_app_get_token
+        uses: lowrisc/ci-actions/ca-token@v1
         with:
           ca_api_endpoint: "https://ca.lowrisc.org/api/nix-caches/public/token"
           ca_api_method: "GET"

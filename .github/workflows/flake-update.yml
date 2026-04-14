@@ -38,14 +38,7 @@ jobs:
 
       - name: Obtain token to create PR
         id: pr_token
-        run: |
-          # Obtain OIDC token from GitHub
-          ID_TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://ca.lowrisc.org" | jq -r .value)
-          echo "::add-mask::$ID_TOKEN"
-          # Exchange for a token to create PR
-          PR_TOKEN=$(curl -sSf -X POST -H "Authorization: Bearer $ID_TOKEN" "https://ca.lowrisc.org/api/github/repos/${{ github.repository }}/token")
-          echo "::add-mask::$PR_TOKEN"
-          echo "pr_token=$PR_TOKEN" >> "$GITHUB_OUTPUT"
+        uses: lowrisc/ci-actions/ca-token@v1
 
       - name: Push changes
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
@@ -56,7 +49,7 @@ jobs:
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           commit-message: "chore: nix flake update"
           # Create a PR with PR token so it can trigger GitHub actions.
-          token: ${{ steps.pr_token.outputs.pr_token }}
+          token: ${{ steps.pr_token.outputs.token }}
           title: "chore: nix flake update"
           body: |
             Automated update to nix flake inputs
