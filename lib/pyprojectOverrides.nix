@@ -140,6 +140,7 @@
       hatch-vcs = [];
     };
     uv.maturin = [];
+    vcs-versioning.typing-extensions = [];
     wcwidth.setuptools = [];
     yapf.setuptools = [];
   };
