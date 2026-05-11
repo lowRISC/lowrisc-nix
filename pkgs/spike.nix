@@ -17,8 +17,8 @@ spike.overrideAttrs (_: prev: {
     owner = "lowRISC";
     repo = "riscv-isa-sim";
     # Changes for cosimulation currently track the head of the 'ibex-cosim' branch.
-    rev = "6d5b660865d4941cc7847fb52d8aa6e8148c1dd5";
-    sha256 = "sha256-weIHJLlh/e7YqPR0JQMLOCXbR38B1w0/ONlFAaf7Oww=";
+    rev = "4b97396656485a129119deaec2ba35e5bf354841";
+    sha256 = "sha256-oF2poKMYoYXytqo/t6eqngJgrr4WFHvKj/cKsGQ88DQ=";
   };
 
   configureFlags = (prev.configureFlags or []) ++ ["--enable-commitlog" "--enable-misaligned"];
