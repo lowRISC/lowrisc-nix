@@ -6,7 +6,7 @@
 name = "opentitan"
 version = "0.0.0"
 description = "Open-source hardware root-of-trust"
-requires-python = ">=3.10"
+requires-python = ">=3.10, <3.14"
 
 dependencies = [
   # Keep sorted
@@ -14,7 +14,6 @@ dependencies = [
   "hjson==3.1.0",
   "libclang==16.0.0",
   "libcst ~= 1.1",
-  "lxml ~= 5.0",
   "mako ~= 1.2",
   "ninja ~= 1.11.1.1",
   "pluralizer==1.2.0",
@@ -28,20 +27,17 @@ dependencies = [
   "tabulate~=0.9",
   "typer==0.6.1",
 
+  # Dependencies: util/get-toolchain.py
+  "urllib3==2.6.3",
+
   # Dependencies: bitstreams cache
   "jsonschema ~= 4.17",
 
   # Dependencies: gen-flash-img.py
   "pyfinite==1.9.1",
 
-  # Dependencies: dv_sim
-  "enlighten ~= 1.10",
+  # Dependencies: reggen
   "mistletoe==0.9.0",
-  # Premailer 3.9.0 broke the API by introducing an allow_loading_external_files
-  # argument that is now mandatory, but didn't exist in previous versions.
-  # To relax the constraint we either need to do a runtime detection, or switch all
-  # users to a newer version.
-  "premailer==3.8.0",
 
   # Dependencies: check_dif_statuses.py
   "pydriller ~= 2.7",
@@ -65,10 +61,10 @@ dependencies = [
   "tockloader==1.13",
 
   # The hardware package manager and build system.
-  "fusesoc==2.4.3",
+  "fusesoc==2.4.5",
 
   # Build and run tool for Design Verification flows
-  "dvsim==1.29.1",
+  "dvsim==1.34.1",
 
   "peakrdl-systemrdl >= 1.0",
 ]
