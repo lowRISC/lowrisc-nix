@@ -79,12 +79,14 @@
           ]
           ++ additionalInputs;
         format = "pyproject";
-        meta = {
-          inherit description mainProgram;
-          homepage = "https://github.com/SystemRDL/${pname}";
-          license = lib.licenses.gpl3;
-          platforms = lib.platforms.all;
-        };
+        meta =
+          {
+            inherit description;
+            homepage = "https://github.com/SystemRDL/${pname}";
+            license = lib.licenses.gpl3;
+            platforms = lib.platforms.all;
+          }
+          // lib.optionalAttrs (mainProgram != null) {inherit mainProgram;};
       }
       // (removeAttrs args [
         "rev"
