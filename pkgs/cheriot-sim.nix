@@ -33,6 +33,13 @@ in
       gmp
     ];
 
+    # GCC 15 (NixOS 26.05) defaults to C23, where an empty parameter list `()`
+    # means `(void)`. Sail 0.20.1's runtime declares `platform_barrier()` with no
+    # args, but the generated model calls it with the barrier_kind argument, so
+    # the build fails with "too many arguments". Compile as C17 to restore the
+    # pre-C23 unspecified-arguments semantics.
+    env.NIX_CFLAGS_COMPILE = "-std=gnu17";
+
     nativeBuildInputs = [
       ocaml
       pkg-config

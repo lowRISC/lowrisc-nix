@@ -31,6 +31,12 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
+  # GCC 15 defaults to -std=gnu23, where empty-parens declarations like
+  # `extern int tputs ();` become zero-argument prototypes. The bundled GDB's
+  # readline still calls these with arguments, so force the pre-C23 dialect for
+  # host C compilation. Only affects C; the gcc C++ sources use CXXFLAGS.
+  CFLAGS = "-O2 -g -std=gnu17";
+
   hardeningDisable = ["format"];
   buildInputs = with pkgs; [
     gmp

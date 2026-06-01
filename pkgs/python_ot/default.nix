@@ -4,13 +4,14 @@
 {
   inputs,
   pkgs,
-  python310,
+  python312,
+  python311,
   lib,
   ...
 }: let
   pythonSets = {
-    "main" = python310;
-    "earlgrey_1.0.0" = python310;
+    "main" = python312;
+    "earlgrey_1.0.0" = python311;
   };
 
   mkEnv = workspaceRoot: python: let

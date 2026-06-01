@@ -10,11 +10,17 @@
   stdenv,
 }:
 verible.override (prev: {
-  buildBazelPackage = args:
+  buildBazelPackage = args: let
+    GIT_DATE = "2024-03-13";
+    GIT_VERSION = "v0.0-3622-g07b310a3";
+  in
     prev.buildBazelPackage (args
-      // rec {
-        GIT_DATE = "2024-03-13";
-        GIT_VERSION = "v0.0-3622-g07b310a3";
+      // {
+        env =
+          (args.env or {})
+          // {
+            inherit GIT_DATE GIT_VERSION;
+          };
 
         version = builtins.concatStringsSep "." (lib.take 3 (lib.drop 1 (builtins.splitVersion GIT_VERSION)));
 
@@ -28,8 +34,8 @@ verible.override (prev: {
         fetchAttrs = {
           hash =
             {
-              aarch64-linux = "sha256-igGOwq+RKHlvGsR01JlQlasccbeOe3MIMnpGKQHjwk0=";
-              x86_64-linux = "sha256-JaAb80YGRqB2sgZiwmqWvCNETachdxV34cwFUuV/2gg=";
+              aarch64-linux = "sha256-8FKnbiyf3psntL6ioq3cVpyBKwvNMC2VqmLqWuDafVk=";
+              x86_64-linux = "sha256-oUEiqYE6cE6RToXtKCb6IKnI8HVNXaFHxdRL/1iDwhU=";
               aarch64-darwin = "sha256-FoTsIEF+HAFRrUmiuiPjxZnm9hirq25qgmP5JhSXiEA=";
             }
       .${

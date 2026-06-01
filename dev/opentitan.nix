@@ -37,7 +37,11 @@
   # Bazel filters out all environment including PKG_CONFIG_PATH. Append this inside wrapper.
   pkg-config-patched = pkg-config.override {
     extraBuildCommands = ''
+      # nixpkgs installs utils.bash read-only (install -m444), so make it
+      # writable to append, then restore the original mode.
+      chmod +w $out/nix-support/utils.bash
       echo "export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig" >> $out/nix-support/utils.bash
+      chmod 444 $out/nix-support/utils.bash
     '';
   };
 
