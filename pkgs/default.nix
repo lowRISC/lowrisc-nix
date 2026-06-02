@@ -11,7 +11,7 @@
   fpga-udev-rules = pkgs.callPackage ./fpga-udev-rules {};
 
   # OpenTitan packages
-  verilator_ot = import ./verilator {inherit pkgs;};
+  verilator_ot = import ./verilator_ot {inherit pkgs;};
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
   verible_ot = pkgs.callPackage ./verible_ot.nix {};
@@ -23,6 +23,9 @@
   cheriot-audit = pkgs.callPackage ./cheriot-audit.nix {};
 
   verilator_caliptra = pkgs.callPackage ./verilator_caliptra.nix {inherit inputs;};
+
+  # General EDA packages
+  verilator_5_040 = pkgs.callPackage ./verilator_5_040.nix {};
 
   # Cheri
   llvm_cheri = pkgs.callPackage ./llvm_cheri.nix {};
