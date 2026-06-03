@@ -70,6 +70,8 @@ stdenv.mkDerivation rec {
     (cmakeFeature "LLVM_PARALLEL_LINK_JOBS" "4")
   ];
 
+  passthru.isLLVM = true;
+
   meta = {
     description = "The clang/LLVM compiler with CHERI support.";
     broken = stdenv.hostPlatform.isDarwin;
