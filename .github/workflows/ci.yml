@@ -24,7 +24,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.MATRIX }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: cachix/install-nix-action@v24
@@ -101,10 +101,10 @@ jobs:
     runs-on: ${{ matrix.system == 'aarch64-darwin' && 'macos-14' || (matrix.system == 'aarch64-linux' && 'ubuntu-24.04-arm' || 'nixos') }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v24
+        uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             substituters = https://nix-cache.lowrisc.org/public/ https://cache.nixos.org/
