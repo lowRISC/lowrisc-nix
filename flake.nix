@@ -41,6 +41,10 @@
         pyprojectOverrides = import ./lib/pyprojectOverrides.nix;
         doc = import ./lib/doc.nix;
         buildFHSEnvOverlay = import ./lib/buildFHSEnvOverlay.nix;
+        # Generic EDA devshell builder + its FHS runtime-library superset.
+        # See lib/edaShell.nix and lib/README-eda.md for the config contract.
+        mkEdaShell = import ./lib/edaShell.nix;
+        edaFhsPackages = import ./lib/edaFhsPackages.nix;
         inherit evalFlake;
       };
     };

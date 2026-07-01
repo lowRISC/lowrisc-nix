@@ -4,5 +4,6 @@ Files: *.lock
        *.patch
        README.md
        **/README.md
+       lib/eda-config.example.json
 Copyright: lowRISC contributors
 License: MIT

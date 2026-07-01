@@ -1,0 +1,46 @@
+{
+  "vendors": {
+    "vendor_a": {
+      "license": {
+        "envVars": {
+          "VENDOR_A_LICENSE_FILE": "1717@license.example.com"
+        }
+      },
+      "tools": {
+        "simulator": {
+          "homeVar": "SIMULATOR_HOME",
+          "pathDirs": ["bin", "tools/bin"],
+          "executables": ["sim", "sim-gui"],
+          "extraEnvVars": {},
+          "extraPaths": {},
+          "requires": [],
+          "capabilities": { "ldRelink": ["toolchain/gcc/bin/ld"] },
+          "versions": {
+            "2025.03": { "home": "/tools/vendor_a/simulator/2025.03" }
+          }
+        }
+      }
+    },
+    "vendor_b": {
+      "license": {
+        "envVars": {
+          "VENDOR_B_LICENSE_FILE": "2020@license.example.com"
+        }
+      },
+      "tools": {
+        "synth": {
+          "homeVar": "SYNTH_HOME",
+          "pathDirs": ["bin"],
+          "executables": ["synth"],
+          "extraEnvVars": {},
+          "extraPaths": {},
+          "requires": [],
+          "capabilities": { "ldPreload": "gmp" },
+          "versions": {
+            "4.2": { "home": "/tools/vendor_b/synth/4.2" }
+          }
+        }
+      }
+    }
+  }
+}
