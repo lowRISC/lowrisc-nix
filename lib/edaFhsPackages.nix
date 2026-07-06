@@ -7,7 +7,8 @@
 # EDA vendors ship pre-compiled binaries that expect a traditional FHS layout
 # (/usr/lib, /bin, ...) populated with a broad set of shared libraries. This
 # file returns the union of the runtime libraries needed to run the EDA tools
-# lowRISC uses, so a single shared `buildFHSEnvOverlay` can host any of them.
+# lowRISC uses, so a single shared FHS env (see edaShell.nix) can host any of
+# them.
 #
 # NOTE: this contains only generic nixpkgs packages — no site paths, license
 # servers or per-tool layout. All of that is supplied at runtime via the config
@@ -43,8 +44,16 @@ in
       util-linux.lib
       lsb-release # some tools probe the host OS even when unsupported
 
-      # Toolchain (tools invoke a compiler/linker for DPI, cosim models, etc.)
+      # Toolchain (tools invoke a compiler/linker for DPI, cosim models, etc.).
       stdenv.cc
+      # A modern, *unwrapped* binutils so /usr/bin/{ld,as,ar,objdump,...} are
+      # plain system-style tools. stdenv.cc alone provides a wrapped `ld` that
+      # injects Nix-specific dynamic-linker/rpath flags — unwanted by vendor
+      # toolchains that shell out to a bare `ld`. hiPrio makes these win the
+      # collision with the cc-wrapper's binaries. (This covers linkers resolved
+      # via PATH only; a vendor toolchain's own bundled `ld`, invoked by absolute
+      # path, is unaffected — that was the job of the removed `ldRelink` shim.)
+      (lib.hiPrio binutils-unwrapped)
 
       # Compression / math / misc core libraries
       zlib

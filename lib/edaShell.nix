@@ -56,10 +56,6 @@
   # Project profile fragment, appended after the EDA setup.
   profile ? "",
 }: let
-  # Build the FHS-env wrapper from the given pkgs, so consumers don't need to
-  # add the buildFHSEnvOverlay overlay to their package set themselves.
-  buildFHSEnvOverlay = pkgs.callPackage ./buildFHSEnvOverlay.nix {};
-
   edaFhsPackages = import ./edaFhsPackages.nix {inherit pkgs;};
 
   # Flatten { vendor.tool = version; } into a list of {vendor;tool;version;}.
@@ -82,12 +78,13 @@
   # The config only *names* a capability; the actual Nix-store bits come from here.
   gmpLib = "${lib.getLib pkgs.gmp}/lib/libgmp.so.10";
 
-  # System-linker shim. Some vendor gcc toolchains ship a linker too old for
-  # modern relative relocations; the `ldRelink` capability lists (globs of)
-  # bundled linkers to bind-replace with this shim (see edaPreExec below).
-  ldWrapper = pkgs.writeShellScript "eda-ld" ''
-    # Unset LD_LIBRARY_PATH so the system ld uses its own RPATH rather than the
-    # tool's bundled libraries.
+  # System-linker shim for the `ldRelink` capability. Some vendor gcc toolchains
+  # ship a linker too old for modern relative relocations; each bundled linker
+  # named by `ldRelink` is bind-replaced with this shim (see edaBwrapBinds). The
+  # shim execs the FHS `ld` (the unwrapped binutils from edaFhsPackages, on PATH
+  # at /usr/bin/ld inside the sandbox) after dropping the tool's LD_LIBRARY_PATH
+  # so the Nix linker resolves its own libraries via RPATH.
+  ldShim = pkgs.writeShellScript "eda-ld" ''
     unset LD_LIBRARY_PATH
     exec /usr/bin/ld "$@"
   '';
@@ -233,13 +230,21 @@
     fi
   '';
 
-  # Runs inside the FHS mount namespace, after `source /etc/profile` (so the
-  # tool *_HOME vars are already exported) and before the shell is exec'd. Uses
-  # the init-provided `bind` helper to replace each configured bundled linker
-  # with the system-ld shim — this cannot be done from the profile, which has no
-  # mount privileges. Reads the home from the exported homeVar (honouring any
-  # USER_<HOMEVAR> override) and falls back to the config's resolved home.
-  edaPreExec = ''
+  # `ldRelink` capability, hermetic edition. This runs in the FHS launcher
+  # *outside* the bubblewrap sandbox (buildFHSEnv's `extraPreBwrapCmds` hook), so
+  # it may read the runtime config and resolve site paths / globs on the real
+  # host filesystem — exactly what the profile cannot do. For each requested tool
+  # it collects the bundled linkers named by `ldRelink` into the `eda_binds`
+  # array as `--ro-bind <shim> <bundled-ld>` pairs. bwrap then applies those
+  # binds from outside the sandbox (no in-sandbox mount privileges needed), which
+  # is what keeps this hermetic. The array is spliced into the bwrap invocation
+  # via `extraBwrapArgs` below.
+  #
+  # Home resolution mirrors the profile: config `home`, overridden by
+  # USER_<homeVar> if the user exported it (the homeVar itself is only exported
+  # later, inside the sandbox, so it is not consulted here).
+  edaBwrapBinds = ''
+    eda_binds=()
     _eda_cfg="''${${configEnvVar}:-}"
     if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
       _eda_relink=(
@@ -247,25 +252,30 @@
       )
       for _entry in "''${_eda_relink[@]}"; do
         read -r _v _t _ver <<< "$_entry"
+        _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
+          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
         _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
           '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
-        _home=""
-        [ -n "$_hv" ] && _home="''${!_hv:-}"
-        [ -z "$_home" ] && _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
-          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
+        if [ -n "$_hv" ]; then
+          _uv="USER_$_hv"
+          [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
+        fi
         [ -z "$_home" ] && continue
         while IFS= read -r _glob; do
           [ -z "$_glob" ] && continue
-          for _f in $_home/$_glob; do
-            [ -e "$_f" ] && bind ${ldWrapper} "$_f"
+          for _f in "$_home"/$_glob; do
+            [ -e "$_f" ] && eda_binds+=(--ro-bind ${ldShim} "$_f")
           done
         done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
           '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
       done
     fi
   '';
-in
-  (buildFHSEnvOverlay {
+
+  # The FHS sandbox itself: upstream nixpkgs buildFHSEnv (bubblewrap-based), for
+  # a hermetic /usr assembled purely from Nix packages rather than overlaid on
+  # top of the host's /usr.
+  fhs = pkgs.buildFHSEnv {
     pname = name;
     version = "eda";
     targetPkgs = _: edaFhsPackages ++ extraDeps ++ extraPkgs;
@@ -273,6 +283,34 @@ in
     multiArch = true;
     runScript = "\${SHELL:-bash}";
     profile = edaProfile + "\n" + profile;
-    preExecHook = edaPreExec;
-  })
-  .env
+    extraPreBwrapCmds = edaBwrapBinds;
+    # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
+    # the NFS tool tree), so each --ro-bind shadows the file it targets. The
+    # quoted array expansion becomes zero args when no ldRelink binds apply.
+    extraBwrapArgs = [''"''${eda_binds[@]}"''];
+  };
+in
+  # Thin interactive-shell wrapper. Upstream's own `.env` execs the sandbox with
+  # whatever `$SHELL` it inherits, but newer nix sets `$SHELL` to a
+  # non-interactive bash. Detect the real parent shell first (as the old
+  # buildFHSEnvOverlay `.env` did) so `nix develop` lands in the user's fish/zsh
+  # /bash, then hand off to the upstream FHS launcher.
+  pkgs.runCommandLocal "${name}-eda-env" {
+    shellHook = ''
+      parent_shell=$(${pkgs.coreutils}/bin/readlink /proc/$PPID/exe)
+      case "$parent_shell" in
+        *bash | *fish | *zsh)
+          export SHELL="$parent_shell"
+          ;;
+        *)
+          unset SHELL
+          ;;
+      esac
+      exec ${lib.getExe fhs}
+    '';
+  } ''
+    echo >&2 ""
+    echo >&2 "*** mkEdaShell environments are intended for interactive nix develop / nix-shell sessions, not for building! ***"
+    echo >&2 ""
+    exit 1
+  ''

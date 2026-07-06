@@ -121,9 +121,10 @@ so no executable code is ever taken from the config file.
   `libgmp` (some tools' loaders need it), scoped to those binaries only.
 - `ldRelink: ["<glob>", ...]` — globs (relative to the tool `home`) of bundled
   linkers that are too old for modern relative relocations (some vendor
-  toolchains ship such a linker). Each match is bind-replaced, inside the FHS
-  mount namespace, with a shim that unsets `LD_LIBRARY_PATH` and execs the system
-  `/usr/bin/ld`.
+  toolchains ship such a linker). Each match is bind-replaced with a shim that
+  unsets `LD_LIBRARY_PATH` and execs the FHS `ld`. The bind is set up by
+  bubblewrap from outside the sandbox (via the FHS launcher, which reads this
+  config), so it needs no in-sandbox privileges and keeps the shell hermetic.
 
 ## Deploying the config
 
