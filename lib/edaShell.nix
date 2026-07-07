@@ -46,7 +46,11 @@
   lib ? pkgs.lib,
   # Human-readable shell / FHS pname.
   name,
-  # Requested tools: { <vendor>.<tool> = "<version>"; ... }
+  # Requested tools, as a list of records matching the shared tool-data schema
+  # (the same shape as a project's tool_data.json):
+  #   [ { name = "<tool>"; vendor = "<vendor>"; version = "<version>"; ... } ]
+  # Extra fields (source-url, doc-url, comment, ...) are ignored. Open-source
+  # tools listed here that are absent from the runtime config are simply skipped.
   tools,
   # Environment variable naming the runtime config file.
   configEnvVar ? "LOWRISC_EDA_CONFIG",
@@ -58,14 +62,16 @@
 }: let
   edaFhsPackages = import ./edaFhsPackages.nix {inherit pkgs;};
 
-  # Flatten { vendor.tool = version; } into a list of {vendor;tool;version;}.
-  requested = lib.flatten (
-    lib.mapAttrsToList (
-      vendor: toolset:
-        lib.mapAttrsToList (tool: version: {inherit vendor tool version;}) toolset
-    )
-    tools
-  );
+  # Normalise the tool-data records into {vendor;tool;version;} lookup triples.
+  # vendor/name are lower-cased to match the config's lower-case keys; the
+  # version string is kept verbatim (it is matched against versions.<ver>).
+  requested =
+    map (t: {
+      vendor = lib.toLower t.vendor;
+      tool = lib.toLower t.name;
+      inherit (t) version;
+    })
+    tools;
 
   # Baked manifest the runtime script iterates. Vendor/tool/version tokens are
   # whitespace-free across our tool data, so a space-delimited triple is safe.
@@ -295,7 +301,7 @@ in
   # non-interactive bash. Detect the real parent shell first (as the old
   # buildFHSEnvOverlay `.env` did) so `nix develop` lands in the user's fish/zsh
   # /bash, then hand off to the upstream FHS launcher.
-  pkgs.runCommandLocal "${name}-eda-env" {
+  pkgs.runCommandLocal "${name}" {
     shellHook = ''
       parent_shell=$(${pkgs.coreutils}/bin/readlink /proc/$PPID/exe)
       case "$parent_shell" in

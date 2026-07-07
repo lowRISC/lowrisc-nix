@@ -36,12 +36,16 @@ tools remain on `PATH` — and prints a warning instead of configuring EDA tools
     devShells.${system}.eda = lowrisc-nix.lib.mkEdaShell {
       inherit pkgs;
       name = "myproject";
-      # <vendor>.<tool> = "<version>"; — must match the keys in the config file.
-      tools = {
-        vendor_a.simulator = "2025.03";
-        vendor_a.debugger  = "2025.03";
-        vendor_b.synth     = "4.2";
-      };
+      # A list of tool records, matching the shared tool-data schema (the same
+      # shape as a project's tool_data.json). `name` and `vendor` are lower-cased
+      # to form the config lookup keys; any extra fields are ignored. You can
+      # feed a tool_data.json directly with
+      #   tools = builtins.fromJSON (builtins.readFile ./tool_data.json);
+      tools = [
+        { name = "simulator"; vendor = "vendor_a"; version = "2025.03"; }
+        { name = "debugger";  vendor = "vendor_a"; version = "2025.03"; }
+        { name = "synth";     vendor = "vendor_b"; version = "4.2"; }
+      ];
       # Optional: extra FHS packages / project build deps.
       extraDeps = with pkgs; [ python3 ];
       # Optional: appended after EDA setup.
@@ -58,7 +62,7 @@ so no overlay wiring is needed. Arguments:
 |----------------|----------|----------------------------------------------------------------|
 | `pkgs`         | yes      | a nixpkgs package set (plain; no overlay required)            |
 | `name`         | yes      | shell / FHS `pname`                                            |
-| `tools`        | yes      | `{ <vendor>.<tool> = "<version>"; }` — the requested selectors |
+| `tools`        | yes      | list of `{ name; vendor; version; ... }` records (tool_data.json schema); `name`/`vendor` lower-cased to config keys |
 | `configEnvVar` | no       | env var naming the config file (default `LOWRISC_EDA_CONFIG`)  |
 | `extraDeps`    | no       | extra packages added to the FHS env                            |
 | `extraPkgs`    | no       | extra packages added to the FHS env (alias of `extraDeps`)     |
@@ -67,9 +71,9 @@ so no overlay wiring is needed. Arguments:
 ## Config file contract
 
 Point `LOWRISC_EDA_CONFIG` at a JSON file matching this schema. `home` is the
-fully-resolved absolute install directory for that tool version. The vendor,
-tool and version keys are arbitrary strings that must match the `tools` selector
-in the project flake.
+fully-resolved absolute install directory for that tool version. The vendor and
+tool keys are lower-case strings that must match the lower-cased `name`/`vendor`
+from the project's `tools` records; the version key must match `version`.
 
 ```json
 {
