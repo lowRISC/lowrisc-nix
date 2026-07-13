@@ -27,6 +27,7 @@
 
   # General EDA packages
   verilator_5_040 = pkgs.callPackage ./verilator_5_040.nix {};
+  verilator_5_048 = pkgs.callPackage ./verilator_5_048.nix {};
 
   # Cheri
   llvm_cheri = pkgs.callPackage ./llvm_cheri.nix {};
