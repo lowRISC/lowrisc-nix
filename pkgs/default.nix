@@ -15,6 +15,7 @@
   python_ot = pkgs.callPackage ./python_ot {inherit inputs;};
   bazel_ot = pkgs.callPackage ./bazel_ot {};
   verible_ot = pkgs.callPackage ./verible_ot.nix {};
+  verible_0_0_4080 = pkgs.callPackage ./verible_0_0_4080.nix {};
 
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
