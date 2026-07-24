@@ -19,6 +19,8 @@
   bazel_ot = bazel_8_7_0;
   verible_ot = pkgs.callPackage ./verible_ot.nix {};
   verible_0_0_4080 = pkgs.callPackage ./verible_0_0_4080.nix {};
+  # libclang for the rules_rust bindgen toolchain (see pkgs/libclang.nix).
+  libclang_21 = pkgs.callPackage ./libclang.nix {llvmPackages = pkgs.llvmPackages_21;};
 
   # CherIoT packages
   spike-ibex-cosim = pkgs.callPackage ./spike.nix {};
