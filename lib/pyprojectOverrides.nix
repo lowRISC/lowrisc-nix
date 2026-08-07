@@ -26,9 +26,14 @@
     click.flit-core = [];
     colorama.hatchling = [];
     commonmark.setuptools = [];
+    contourpy = {
+      meson-python = [];
+      pybind11 = [];
+    };
     crcmod.setuptools = [];
     cssselect.setuptools = [];
     cssutils.setuptools = [];
+    cycler.setuptools = [];
     cython.setuptools = [];
     dvplan.hatchling = [];
     dvsim.hatchling = [];
@@ -40,6 +45,7 @@
     };
     fastjsonschema.setuptools = [];
     flake8.setuptools = [];
+    fonttools.setuptools = [];
     fusesoc.setuptools = [];
     git-me-the-url.setuptools = [];
     gitdb.setuptools = [];
@@ -85,6 +91,11 @@
     pathspec.flit-core = [];
     peakrdl-systemrdl.setuptools = [];
     peakrdl-uvm.setuptools = [];
+    pillow = {
+      setuptools = [];
+      pybind11 = [];
+    };
+    plotly.hatchling = [];
     pluggy.setuptools = [];
     pluralizer.setuptools = [];
     psutil.setuptools = [];
@@ -108,6 +119,7 @@
     pyserial.setuptools = [];
     pytest.setuptools = [];
     pytest-timeout.setuptools = [];
+    python-dateutil.setuptools = [];
     pytz.setuptools = [];
     pyyaml.setuptools = [];
     questionary.poetry-core = [];
@@ -184,6 +196,17 @@
     pydantic-core = prev.pydantic-core.overrideAttrs (old: {
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [rustc cargo]);
     });
+    contourpy = prev.contourpy.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [ninja pkg-config]);
+    });
+    pillow = prev.pillow.overrideAttrs (old: {
+      # Pillow's setup.py locates zlib via pkg-config (or ZLIB_ROOT), not via
+      # the compiler search path, so zlib must be a buildInput (where Nix's
+      # pkg-config wrapper picks up zlib.pc) alongside pkg-config itself.
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with pkgs; [pkg-config]);
+      # zlib and libjpeg are Pillow's mandatory dependencies; the rest are optional.
+      buildInputs = (old.buildInputs or []) ++ (with pkgs; [zlib libjpeg]);
+    });
   };
 
   preferWheelOverrides = {
@@ -198,6 +221,10 @@
     ruff = {};
     uv = {};
     pydantic-core = {};
+    kiwisolver = {};
+    numpy = {};
+    # meson build downloads a pinned freetype tarball, which fails in the sandbox.
+    matplotlib = {};
   };
 
   preferWheelOverlay = (
