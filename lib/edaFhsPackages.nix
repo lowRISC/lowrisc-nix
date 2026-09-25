@@ -37,6 +37,32 @@
     '';
   };
 
+  # The Nix cc-wrapper knows nothing about the FHS tree. buildFHSEnv teaches it
+  # by exporting `NIX_CFLAGS_COMPILE=-idirafter /usr/include` and
+  # `NIX_LDFLAGS=-L/usr/lib ...` from the profile, so any build that sanitises
+  # the environment before invoking the compiler loses /usr/include and
+  # /usr/lib. Bazel is the case in point: with `--incompatible_strict_action_env`
+  # and an explicit action `env`, the compiler is handed nothing but PATH and
+  # HOME, and a Bazel-driven Verilator build fails on `#include <libelf.h>` even
+  # though libelf is right there in the sandbox.
+  #
+  # Bake the FHS search paths into the wrapper instead, so the compiler behaves
+  # like a system compiler no matter what environment it is invoked from. The
+  # wrapper's add-flags.sh reads `nix-support/cc-cflags` and `cc-ldflags`
+  # unconditionally — unlike the generic `NIX_*` variables, which it only
+  # consumes when the matching `NIX_{CC,BINTOOLS}_WRAPPER_TARGET_HOST_<salt>`
+  # role variable is also set. `-idirafter` keeps /usr/include last in the
+  # search order, after the wrapper's own libc headers and any package's -I.
+  # Same intent as the pkg-config and aclocal wrappers below.
+  cc-fhs = pkgs.stdenv.cc.override (old: {
+    extraBuildCommands =
+      (old.extraBuildCommands or "")
+      + ''
+        echo "-idirafter /usr/include" >> $out/nix-support/cc-cflags
+        echo "-L/usr/lib -L/usr/lib32" >> $out/nix-support/cc-ldflags
+      '';
+  });
+
   # Bazel filters out all environment including PKG_CONFIG_PATH. Append this inside wrapper.
   pkg-config-patched = pkgs.pkg-config.override {
     extraBuildCommands = ''
@@ -82,7 +108,9 @@ in
       lsb-release # some tools probe the host OS even when unsupported
 
       # Toolchain (tools invoke a compiler/linker for DPI, cosim models, etc.).
-      stdenv.cc
+      # Wrapped above so it finds /usr/include and /usr/lib without relying on
+      # the profile's NIX_CFLAGS_COMPILE / NIX_LDFLAGS reaching the compiler.
+      cc-fhs
       # A modern, *unwrapped* binutils so /usr/bin/{ld,as,ar,objdump,...} are
       # plain system-style tools. stdenv.cc alone provides a wrapped `ld` that
       # injects Nix-specific dynamic-linker/rpath flags — unwanted by vendor
