@@ -72,6 +72,42 @@
 
   initCmd =
     ''
+      # Refuse to start a nested overlay sandbox. This MUST be the very first
+      # thing the hook does: every line below assumes it is building the first
+      # overlay level, so none of it (the /usr overlay, the /etc and /etc/ssl
+      # overlays, the ld cache, ...) is compatible with an additional nesting
+      # level. Stacking another overlay would hit the kernel's
+      # FILESYSTEM_MAX_STACK_DEPTH (2) limit within a couple of levels, and even
+      # where it "works" the host /usr can no longer be layered in, silently
+      # hiding tools from the parent shell. Nesting is almost never intentional
+      # -- it usually means an earlier `nix develop` session is still active in
+      # this terminal -- so fail fast, before any mounts, so that exiting cleanly
+      # drops the user back into the sandbox they were already in.
+      #
+      # The breadcrumb variables are re-exported just before we exec the
+      # runScript, so a nested `nix develop` inherits them and lands here.
+      # Best-effort: if nix ever scrubs them the depth reads 0 and we fall
+      # through to the normal setup (whose own mount guards and diagnostics still
+      # apply).
+      _fhs_depth="''${LOWRISC_FHS_OVERLAY_DEPTH:-0}"
+      _fhs_stack="''${LOWRISC_FHS_OVERLAY_STACK:-}"
+      if (( _fhs_depth > 0 )); then
+        echo "" >&2
+        echo "ERROR: refusing to start a nested FHS overlay sandbox." >&2
+        echo "" >&2
+        echo "You are already inside $_fhs_depth FHS overlay sandbox(es):" >&2
+        echo "    $_fhs_stack" >&2
+        echo "" >&2
+        echo "Starting another would stack overlay filesystems (the kernel allows at most" >&2
+        echo "FILESYSTEM_MAX_STACK_DEPTH=2) and would hide the parent shell's host tools from" >&2
+        echo "the new one. This almost always means an earlier 'nix develop' session is still" >&2
+        echo "active in this terminal." >&2
+        echo "" >&2
+        echo "Run 'exit' to leave the current sandbox before starting a new one in this shell." >&2
+        echo "" >&2
+        exit 1
+      fi
+
       tmpfs() {
         ${coreutils}/bin/mkdir -p "$1"
         ${util-linux}/bin/mount none -t tmpfs "$1"
@@ -84,6 +120,32 @@
           ${coreutils}/bin/touch "$2"
         fi
         ${util-linux}/bin/mount --rbind "$1" "$2"
+      }
+
+      # Emit detailed diagnostics when the /usr overlay mount fails, so the user
+      # is not left guessing why `jq` and every other FHS tool suddenly vanished.
+      diagnose_usr_failure() {
+        echo "" >&2
+        echo "ERROR: buildFHSEnvOverlay could not overlay /usr; this sandbox cannot start." >&2
+        echo "" >&2
+        echo "The overlay mount of /usr failed (typically EINVAL, shown above as 'wrong fs" >&2
+        echo "type, bad option, bad superblock'). overlayfs cannot stack more than" >&2
+        echo "FILESYSTEM_MAX_STACK_DEPTH (2) overlays deep, and cannot use a lowerdir that is" >&2
+        echo "itself a mountpoint. The usual trigger is starting this sandbox while already" >&2
+        echo "inside another FHS/overlay sandbox, or on a host where /usr is a separate mount." >&2
+        if (( _fhs_depth > 0 )); then
+          echo "" >&2
+          echo "You appear to already be inside $_fhs_depth nested FHS overlay sandbox(es):" >&2
+          echo "    ''${_fhs_stack:-(names unavailable)}" >&2
+          echo "Re-running 'nix develop' / 'nix-shell' from within a sandbox starts *another*," >&2
+          echo "nested one. Run 'exit' to leave the sandbox(es) and retry from your login shell." >&2
+        fi
+        echo "" >&2
+        echo "Filesystems currently stacked at/under /usr (overlay rows list their lower layers):" >&2
+        if ! ${lib.getExe gnugrep} -E ' /\.host-root/usr(/| )| - overlay ' /.host-root/proc/self/mountinfo >&2; then
+          echo "    (could not read /proc/self/mountinfo)" >&2
+        fi
+        echo "" >&2
       }
 
       # We need a directory for the temporary root. Use /tmp because it'll always exist.
@@ -109,12 +171,24 @@
       # Overlay /usr from FHS env on top of existing /usr.
       USR_LOWERDIR=/usr:${fhsenv}/usr
 
-      # If we have mount points inside `/usr`, overlaying it will fail.
-      if ! ${lib.getExe gnugrep} -q ' /.host-root/usr/' /.host-root/proc/mounts; then
+      # overlayfs does not cross mounts inside a lowerdir, and it cannot stack on
+      # top of a lowerdir that is itself a mountpoint. Only fold the host /usr in
+      # when it is a plain directory with no mounts at or beneath it. The pattern
+      # matches the /usr mountpoint itself (trailing space) as well as anything
+      # beneath it (trailing slash).
+      if ! ${lib.getExe gnugrep} -qE ' /\.host-root/usr(/| )' /.host-root/proc/mounts; then
         USR_LOWERDIR=$USR_LOWERDIR:/.host-root/usr
+      else
+        # Reached only when not nested (nesting aborts earlier): the host /usr is
+        # a mount in its own right (e.g. a separate /usr partition). We cannot use
+        # it as a lowerdir, so the sandbox proceeds with the FHS /usr only.
+        echo "buildFHSEnvOverlay: host /usr is a standalone mountpoint; not layering it into this sandbox." >&2
       fi
 
-      ${util-linux}/bin/mount none -t overlay -o lowerdir=$USR_LOWERDIR /usr || ( echo "cannot mount /usr. too many level of nesting?" && exit 1 )
+      if ! ${util-linux}/bin/mount none -t overlay -o lowerdir=$USR_LOWERDIR /usr; then
+        diagnose_usr_failure
+        exit 1
+      fi
 
       # Mount a new /etc because we want to write ld caches.
       tmpfs /etc
@@ -214,6 +288,11 @@
       /run/opengl-driver-32/lib
       EOF
       ldconfig &> /dev/null
+
+      # Record our nesting depth/name so any sandbox launched from within this
+      # one can detect it (see the breadcrumb read and diagnostics above).
+      export LOWRISC_FHS_OVERLAY_DEPTH=$(( _fhs_depth + 1 ))
+      export LOWRISC_FHS_OVERLAY_STACK="''${_fhs_stack:+$_fhs_stack > }${name}"
 
       ${preExecHook}
       exec unshare -c -- ${runScript} "$@"
