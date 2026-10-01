@@ -61,6 +61,7 @@
   profile ? "",
 }: let
   edaFhsPackages = import ./edaFhsPackages.nix {inherit pkgs;};
+  buildFHSEnvOverlay = pkgs.callPackage ./buildFHSEnvOverlay.nix {};
 
   # Normalise the tool-data records into {vendor;tool;version;} lookup triples.
   # vendor/name are lower-cased to match the config's lower-case keys; the
@@ -278,6 +279,40 @@
     fi
   '';
 
+  # `ldRelink` capability for the overlay sandbox. Same intent as edaBwrapBinds,
+  # but expressed as a buildFHSEnvOverlay `preExecHook`: it runs *inside* the
+  # overlay's mount namespace (after the host tool tree is bound back at its
+  # original paths) where the `bind` helper is available, so each bundled linker
+  # named by `ldRelink` is rbind-replaced with the FHS `ld` shim. Mirrors
+  # edaBwrapBinds' home resolution (config `home`, overridden by USER_<homeVar>).
+  edaOverlayBinds = ''
+    _eda_cfg="''${${configEnvVar}:-}"
+    if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
+      _eda_relink=(
+    ${manifestLines}
+      )
+      for _entry in "''${_eda_relink[@]}"; do
+        read -r _v _t _ver <<< "$_entry"
+        _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
+          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
+        _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+          '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
+        if [ -n "$_hv" ]; then
+          _uv="USER_$_hv"
+          [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
+        fi
+        [ -z "$_home" ] && continue
+        while IFS= read -r _glob; do
+          [ -z "$_glob" ] && continue
+          for _f in "$_home"/$_glob; do
+            [ -e "$_f" ] && bind ${ldShim} "$_f"
+          done
+        done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+          '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
+      done
+    fi
+  '';
+
   # Parent-shell detection. Runs *outside* bwrap (in the nix develop shellHook
   # or the `apps.<name>` launcher) — inside the sandbox `$PPID` refers to the
   # FHS init, not the invoking terminal, so this must happen before exec'ing
@@ -296,13 +331,17 @@
     esac
   '';
 
-  # Outside-bwrap launcher shared by both entry points (`nix develop`'s
-  # shellHook and the `apps.<name>` payload). Argv is forwarded through, so
-  # `nix run .# -- cmd arg1 arg2` reaches `exec "$@"` inside the dispatcher.
-  launcher = pkgs.writeShellScript "${name}-launcher" ''
-    ${detectParentShell}
-    exec ${lib.getExe fhs} "$@"
-  '';
+  # Outside-sandbox launcher for a given FHS env (`fhsEnv`). Shared by both
+  # entry points (`nix develop`'s shellHook and the `apps.<name>` payload) and
+  # both the hermetic and overlay envs. Parent-shell detection must happen out
+  # here: inside the sandbox $PPID is the FHS init, not the invoking terminal.
+  # Argv is forwarded through, so `nix run .# -- cmd arg1 arg2` reaches
+  # `exec "$@"` inside the dispatcher.
+  mkLauncher = fhsEnv:
+    pkgs.writeShellScript "${name}-launcher" ''
+      ${detectParentShell}
+      exec ${lib.getExe fhsEnv} "$@"
+    '';
 
   # Dispatcher used as the FHS `runScript`. With no args, drops into the
   # user's interactive `$SHELL` (unchanged `nix develop` UX). With args, execs
@@ -317,10 +356,10 @@
     fi
   '';
 
-  # The FHS sandbox itself: upstream nixpkgs buildFHSEnv (bubblewrap-based), for
-  # a hermetic /usr assembled purely from Nix packages rather than overlaid on
-  # top of the host's /usr.
-  fhs = pkgs.buildFHSEnv {
+  # Builder-agnostic EDA env arguments, shared by the hermetic and overlay FHS
+  # sandboxes below. Each builder merges in its own variant-specific args (the
+  # `ldRelink` mechanism in particular differs between the two).
+  commonFhsArgs = {
     pname = name;
     version = "eda";
     targetPkgs = _: edaFhsPackages ++ extraDeps ++ extraPkgs;
@@ -328,35 +367,69 @@
     multiArch = true;
     runScript = "${runDispatch}";
     profile = edaProfile + "\n" + profile;
-    extraPreBwrapCmds = edaBwrapBinds;
-    # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
-    # the NFS tool tree), so each --ro-bind shadows the file it targets. The
-    # quoted array expansion becomes zero args when no ldRelink binds apply.
-    extraBwrapArgs = [''"''${eda_binds[@]}"''];
+  };
+
+  # Upstream nixpkgs buildFHSEnv (bubblewrap-based) sandbox
+  fhs = pkgs.buildFHSEnv (commonFhsArgs
+    // {
+      extraPreBwrapCmds = edaBwrapBinds;
+      # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
+      # the NFS tool tree), so each --ro-bind shadows the file it targets. The
+      # quoted array expansion becomes zero args when no ldRelink binds apply.
+      extraBwrapArgs = [''"''${eda_binds[@]}"''];
+    });
+
+  # Non-hermetic counterpart of `fhs`: the same EDA environment, but built with
+  # the overlay FHS sandbox (buildFHSEnvOverlay).
+  # `meta.mainProgram` is set explicitly because, unlike buildFHSEnv, the overlay
+  # builder does not default it (needed for `lib.getExe fhsOverlay`).
+  fhsOverlay = buildFHSEnvOverlay (commonFhsArgs
+    // {
+      meta.mainProgram = name;
+      preExecHook = edaOverlayBinds;
+    });
+
+  # Wrapper derivation exposed to consumers.
+  mkShellWrapper = {
+    drvName ? name,
+    launcher,
+    extraPassthru ? {},
+  }:
+    pkgs.runCommandLocal drvName {
+      shellHook = ''
+        exec ${launcher}
+      '';
+      passthru =
+        {
+          # Flake apps payload: run this shell non-interactively. Use as:
+          #   apps.<myapp> = (mkEdaShell { ... }).app;
+          # then `nix run .# -- cmd arg1 arg2` execs `cmd arg1 arg2` inside the
+          # sandbox with the EDA env fully set up (profile still runs before the
+          # dispatcher). With no args after `--` you get the interactive `$SHELL`,
+          # matching `nix develop`.
+          app = {
+            type = "app";
+            program = "${launcher}";
+          };
+        }
+        // extraPassthru;
+    } ''
+      echo >&2 ""
+      echo >&2 "*** mkEdaShell environments are intended for interactive nix develop / nix-shell sessions, not for building! ***"
+      echo >&2 ""
+      exit 1
+    '';
+
+  # Non-hermetic devShell wrapper (overlay FHS). Exposed on the default output
+  # as `.nonhermetic` so consumers can offer it as a separate devShell / app:
+  #   devShells.<name>-nonhermetic = (mkEdaShell { ... }).nonhermetic;
+  #   apps.<name>-nonhermetic      = (mkEdaShell { ... }).nonhermetic.app;
+  nonhermeticShell = mkShellWrapper {
+    drvName = "${name}-nonhermetic";
+    launcher = mkLauncher fhsOverlay;
   };
 in
-  # Wrapper derivation exposed to consumers. The builder itself just aborts —
-  # this exists to carry the `shellHook` (for `nix develop`) and the
-  # `passthru.app` payload (for `nix run`); it is not meant to be realised.
-  pkgs.runCommandLocal "${name}" {
-    shellHook = ''
-      exec ${launcher}
-    '';
-    passthru = {
-      # Flake apps payload: run this shell non-interactively. Use as:
-      #   apps.<myapp> = (mkEdaShell { ... }).app;
-      # then `nix run .# -- cmd arg1 arg2` execs `cmd arg1 arg2` inside the
-      # sandbox with the EDA env fully set up (profile still runs before the
-      # dispatcher). With no args after `--` you get the interactive `$SHELL`,
-      # matching `nix develop`.
-      app = {
-        type = "app";
-        program = "${launcher}";
-      };
-    };
-  } ''
-    echo >&2 ""
-    echo >&2 "*** mkEdaShell environments are intended for interactive nix develop / nix-shell sessions, not for building! ***"
-    echo >&2 ""
-    exit 1
-  ''
+  mkShellWrapper {
+    launcher = mkLauncher fhs;
+    extraPassthru = {nonhermetic = nonhermeticShell;};
+  }
