@@ -72,38 +72,43 @@
 
   initCmd =
     ''
-      # Refuse to start a nested overlay sandbox. This MUST be the very first
-      # thing the hook does: every line below assumes it is building the first
-      # overlay level, so none of it (the /usr overlay, the /etc and /etc/ssl
-      # overlays, the ld cache, ...) is compatible with an additional nesting
-      # level. Stacking another overlay would hit the kernel's
-      # FILESYSTEM_MAX_STACK_DEPTH (2) limit within a couple of levels, and even
-      # where it "works" the host /usr can no longer be layered in, silently
-      # hiding tools from the parent shell. Nesting is almost never intentional
-      # -- it usually means an earlier `nix develop` session is still active in
-      # this terminal -- so fail fast, before any mounts, so that exiting cleanly
-      # drops the user back into the sandbox they were already in.
+      # Guard the overlay stacking depth. This MUST be the very first thing the
+      # hook does: it has to run before any mount so that, on refusal, exiting
+      # cleanly drops the user back into the sandbox they were already in.
+      #
+      # Why there is a hard ceiling: overlayfs is a *stacking* filesystem -- it
+      # implements each operation by calling the same operation on its underlying
+      # layer. So one VFS call entering the top overlay descends through every
+      # layer in the stack, and each stacked layer the call passes through pushes
+      # its own frames onto the kernel's call stack. That stack is small and
+      # fixed (a couple of pages), so a deep tower of stacked filesystems can
+      # overflow it. To bound that, the kernel caps the *total* filesystem stack
+      # at FILESYSTEM_MAX_STACK_DEPTH = 2 (tracked per-superblock as
+      # s_stack_depth, checked at mount time): enough for two stacked layers'
+      # frames, no more. overlayfs returns EINVAL ("maximum fs stacking depth
+      # exceeded") for anything that would reach depth 3.
       #
       # The breadcrumb variables are re-exported just before we exec the
-      # runScript, so a nested `nix develop` inherits them and lands here.
-      # Best-effort: if nix ever scrubs them the depth reads 0 and we fall
-      # through to the normal setup (whose own mount guards and diagnostics still
-      # apply).
+      # runScript, so a nested `nix develop` inherits them and the depth count
+      # stays accurate. Best-effort: if nix ever scrubs them the depth reads 0
+      # and we fall through to the normal setup (whose own mount guards and
+      # diagnostics still apply).
       _fhs_depth="''${LOWRISC_FHS_OVERLAY_DEPTH:-0}"
       _fhs_stack="''${LOWRISC_FHS_OVERLAY_STACK:-}"
-      if (( _fhs_depth > 0 )); then
+      _fhs_max_depth=2
+      if (( _fhs_depth >= _fhs_max_depth )); then
         echo "" >&2
-        echo "ERROR: refusing to start a nested FHS overlay sandbox." >&2
+        echo "ERROR: refusing to start another nested FHS overlay sandbox." >&2
         echo "" >&2
         echo "You are already inside $_fhs_depth FHS overlay sandbox(es):" >&2
         echo "    $_fhs_stack" >&2
         echo "" >&2
-        echo "Starting another would stack overlay filesystems (the kernel allows at most" >&2
-        echo "FILESYSTEM_MAX_STACK_DEPTH=2) and would hide the parent shell's host tools from" >&2
-        echo "the new one. This almost always means an earlier 'nix develop' session is still" >&2
-        echo "active in this terminal." >&2
+        echo "Starting another would stack overlay filesystems beyond the kernel's limit" >&2
+        echo "(FILESYSTEM_MAX_STACK_DEPTH=$_fhs_max_depth) and the mount would fail mid-setup." >&2
+        echo "This almost always means an earlier 'nix develop' session is still active in" >&2
+        echo "this terminal." >&2
         echo "" >&2
-        echo "Run 'exit' to leave the current sandbox before starting a new one in this shell." >&2
+        echo "Run 'exit' to leave a sandbox before starting a new one in this shell." >&2
         echo "" >&2
         exit 1
       fi
@@ -129,16 +134,20 @@
         echo "ERROR: buildFHSEnvOverlay could not overlay /usr; this sandbox cannot start." >&2
         echo "" >&2
         echo "The overlay mount of /usr failed (typically EINVAL, shown above as 'wrong fs" >&2
-        echo "type, bad option, bad superblock'). overlayfs cannot stack more than" >&2
-        echo "FILESYSTEM_MAX_STACK_DEPTH (2) overlays deep, and cannot use a lowerdir that is" >&2
-        echo "itself a mountpoint. The usual trigger is starting this sandbox while already" >&2
-        echo "inside another FHS/overlay sandbox, or on a host where /usr is a separate mount." >&2
+        echo "type, bad option, bad superblock'). An op descending through stacked filesystems" >&2
+        echo "pushes frames per layer onto the fixed kernel stack, so the kernel caps the stack" >&2
+        echo "at FILESYSTEM_MAX_STACK_DEPTH (2); overlayfs also cannot use a lowerdir that is" >&2
+        echo "itself a mountpoint. The usual trigger is a host where /usr (or the dirs we fold" >&2
+        echo "in) is already a separate mount or overlay, leaving no layer left for this env's" >&2
+        echo "own overlay." >&2
         if (( _fhs_depth > 0 )); then
           echo "" >&2
-          echo "You appear to already be inside $_fhs_depth nested FHS overlay sandbox(es):" >&2
+          echo "You are already inside $_fhs_depth FHS overlay sandbox(es):" >&2
           echo "    ''${_fhs_stack:-(names unavailable)}" >&2
-          echo "Re-running 'nix develop' / 'nix-shell' from within a sandbox starts *another*," >&2
-          echo "nested one. Run 'exit' to leave the sandbox(es) and retry from your login shell." >&2
+          echo "One nested env is allowed, but it spends the last of the two stacked layers, so" >&2
+          echo "there is no headroom: if the host already stacks filesystems under /usr this" >&2
+          echo "env tips over the limit. Run 'exit' to leave the sandbox(es) and retry from" >&2
+          echo "your login shell." >&2
         fi
         echo "" >&2
         echo "Filesystems currently stacked at/under /usr (overlay rows list their lower layers):" >&2
@@ -179,10 +188,18 @@
       if ! ${lib.getExe gnugrep} -qE ' /\.host-root/usr(/| )' /.host-root/proc/mounts; then
         USR_LOWERDIR=$USR_LOWERDIR:/.host-root/usr
       else
-        # Reached only when not nested (nesting aborts earlier): the host /usr is
-        # a mount in its own right (e.g. a separate /usr partition). We cannot use
-        # it as a lowerdir, so the sandbox proceeds with the FHS /usr only.
-        echo "buildFHSEnvOverlay: host /usr is a standalone mountpoint; not layering it into this sandbox." >&2
+        # The parent /usr is a mountpoint we cannot use as a lowerdir -- either a
+        # standalone /usr partition, or (when nested inside another overlay env)
+        # the parent env's own /usr overlay. Proceed with the FHS /usr only; any
+        # parent tools the child needs are passed in explicitly.
+        #
+        # Only warn when this is unexpected, i.e. in a top-level env (depth 0)
+        # where a standalone /usr partition silently costs the user the host's
+        # /usr tools. When nested (depth > 0) it is the normal, documented
+        # consequence of running an overlay env inside another.
+        if (( _fhs_depth == 0 )); then
+          echo "buildFHSEnvOverlay: host /usr is a standalone mountpoint; not layering it into this sandbox." >&2
+        fi
       fi
 
       if ! ${util-linux}/bin/mount none -t overlay -o lowerdir=$USR_LOWERDIR /usr; then
