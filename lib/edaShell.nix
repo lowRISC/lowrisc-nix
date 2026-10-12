@@ -113,6 +113,25 @@
       )
       _eda_vendors_seen=()
 
+      # Print PATH with every occurrence of directory $1 removed.
+      _eda_path_without() {
+        local p=":$PATH:"
+        while [[ $p == *":$1:"* ]]; do
+          p=''${p//":$1:"/:}
+        done
+        p=''${p#:}
+        printf '%s' "''${p%:}"
+      }
+
+      # Prepend directory $1 to PATH, dropping any existing occurrence, so that
+      # re-sourcing the profile (nested `bash -l`, `source /etc/profile`, ...)
+      # leaves PATH unchanged.
+      _eda_path_prepend() {
+        local rest
+        rest=$(_eda_path_without "$1")
+        export PATH="$1''${rest:+:$rest}"
+      }
+
       # Apply an allowlisted capability for one tool. Mechanisms only — the
       # config never supplies executable code.
       _eda_apply_caps() {
@@ -135,12 +154,7 @@
           # Resolve the real binaries with wrapdir removed from PATH, so that a
           # re-sourced profile (wrapdir already on PATH) cannot generate a
           # wrapper that execs itself.
-          search=":$PATH:"
-          while [[ $search == *":$wrapdir:"* ]]; do
-            search=''${search//":$wrapdir:"/:}
-          done
-          search=''${search#:}
-          search=''${search%:}
+          search=$(_eda_path_without "$wrapdir")
           while IFS= read -r exe; do
             [ -z "$exe" ] && continue
             real=$(PATH="$search" command -v "$exe" 2>/dev/null) || continue
@@ -156,7 +170,7 @@
             mv -f "$tmp" "$wrapdir/$exe"
           done < <(jq -r --arg v "$v" --arg t "$t" \
             '(.vendors[$v].tools[$t].executables // [])[]' "$_eda_cfg")
-          export PATH="$wrapdir:$search"
+          _eda_path_prepend "$wrapdir"
         fi
       }
 
@@ -194,7 +208,7 @@
         # pathDirs: prepend $home/<dir> to PATH (default ["bin"]).
         while IFS= read -r d; do
           [ -z "$d" ] && continue
-          export PATH="$home/$d:$PATH"
+          _eda_path_prepend "$home/$d"
         done < <(jq -r --arg v "$v" --arg t "$t" \
           '(.vendors[$v].tools[$t].pathDirs // ["bin"])[]' "$_eda_cfg")
 
@@ -252,7 +266,7 @@
           '(.vendors[$v].license.envVars // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
       done < <(printf '%s\n' "''${_eda_vendors_seen[@]}" | sort -u)
 
-      unset -f _eda_setup_one _eda_apply_caps
+      unset -f _eda_setup_one _eda_apply_caps _eda_path_without _eda_path_prepend
       unset _eda_cfg _eda_requested _eda_vendors_seen _entry _ev _et _ever _v _k _val
     fi
   '';
