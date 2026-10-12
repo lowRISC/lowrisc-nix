@@ -117,26 +117,46 @@
       # config never supplies executable code.
       _eda_apply_caps() {
         local v="$1" t="$2" home="$3"
-        local cap exe real wrapdir
+        local cap exe real wrapdir tmp search
         cap=$(jq -r --arg v "$v" --arg t "$t" \
           '.vendors[$v].tools[$t].capabilities.ldPreload // empty' "$_eda_cfg")
         if [ "$cap" = "gmp" ]; then
           # Wrap this tool's executables so they LD_PRELOAD the FHS gmp without
           # perturbing every process in the shared shell. The real binaries are
           # already on PATH (prepended above), so resolve + shadow them.
-          wrapdir=$(mktemp -d)
+          #
+          # The wrapper dir must be stable and outside /tmp: tools such as Bazel
+          # record the directory a binary was found in and then run actions in
+          # a sandbox with a private /tmp, and a per-shell path would change
+          # PATH (and so invalidate cached results) on every new shell. Key it
+          # on everything the wrapper contents depend on.
+          wrapdir="''${XDG_CACHE_HOME:-$HOME/.cache}/lowrisc-eda/wrappers/$v-$t-$(printf '%s\n' "$home" "${gmpLib}" | sha256sum | cut -c1-16)"
+          mkdir -p "$wrapdir"
+          # Resolve the real binaries with wrapdir removed from PATH, so that a
+          # re-sourced profile (wrapdir already on PATH) cannot generate a
+          # wrapper that execs itself.
+          search=":$PATH:"
+          while [[ $search == *":$wrapdir:"* ]]; do
+            search=''${search//":$wrapdir:"/:}
+          done
+          search=''${search#:}
+          search=''${search%:}
           while IFS= read -r exe; do
             [ -z "$exe" ] && continue
-            real=$(command -v "$exe" 2>/dev/null) || continue
+            real=$(PATH="$search" command -v "$exe" 2>/dev/null) || continue
+            # Write then rename so concurrently starting shells never see a
+            # partially written wrapper.
+            tmp=$(mktemp "$wrapdir/.$exe.XXXXXX")
             {
               echo '#!/bin/sh'
               echo "export LD_PRELOAD=${gmpLib}"
               echo "exec \"$real\" \"\$@\""
-            } > "$wrapdir/$exe"
-            chmod +x "$wrapdir/$exe"
+            } > "$tmp"
+            chmod +x "$tmp"
+            mv -f "$tmp" "$wrapdir/$exe"
           done < <(jq -r --arg v "$v" --arg t "$t" \
             '(.vendors[$v].tools[$t].executables // [])[]' "$_eda_cfg")
-          export PATH="$wrapdir:$PATH"
+          export PATH="$wrapdir:$search"
         fi
       }
 
