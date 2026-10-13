@@ -313,6 +313,20 @@
     fi
   '';
 
+  # Bind the host's real /etc/os-release into the hermetic sandbox. nixpkgs
+  # otherwise symlinks it to /.host-etc/os-release, which dangles on hosts where
+  # it is itself a relative symlink (e.g. Ubuntu: ../usr/lib/os-release resolves
+  # into the FHS /usr). Resolving it here, on the real host, avoids that. Adding
+  # it to `etc_ignored` makes nixpkgs skip its own symlink for this entry.
+  # Falls back to the default behaviour if the host file cannot be resolved.
+  osReleaseBind = ''
+    if _osr=$(${pkgs.coreutils}/bin/readlink -f /etc/os-release) && [ -f "$_osr" ]; then
+      ro_mounts+=(--ro-bind "$_osr" /etc/os-release)
+      etc_ignored+=(/etc/os-release)
+    fi
+    unset _osr
+  '';
+
   # `ldRelink` capability for the overlay sandbox. Same intent as edaBwrapBinds,
   # but expressed as a buildFHSEnvOverlay `preExecHook`: it runs *inside* the
   # overlay's mount namespace (after the host tool tree is bound back at its
@@ -406,7 +420,7 @@
   # Upstream nixpkgs buildFHSEnv (bubblewrap-based) sandbox
   fhs = pkgs.buildFHSEnv (commonFhsArgs
     // {
-      extraPreBwrapCmds = edaBwrapBinds;
+      extraPreBwrapCmds = osReleaseBind + edaBwrapBinds;
       # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
       # the NFS tool tree), so each --ro-bind shadows the file it targets. The
       # quoted array expansion becomes zero args when no ldRelink binds apply.
