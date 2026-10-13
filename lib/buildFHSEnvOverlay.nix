@@ -144,6 +144,14 @@
           /etc/ld.so*)
             continue
             ;;
+          # Ubuntu symlinks /etc/os-release to ../usr/lib/os-release, which would
+          # resolve into the FHS /usr overlay. Copy the host's real file instead.
+          /etc/os-release)
+            if [ -e "$i" ]; then
+              ${coreutils}/bin/cat "$i" > /etc/os-release
+            fi
+            continue
+            ;;
         esac
 
         if [[ -L $i ]]; then
