@@ -268,6 +268,9 @@
 
       unset -f _eda_setup_one _eda_apply_caps _eda_path_without _eda_path_prepend
       unset _eda_cfg _eda_requested _eda_vendors_seen _entry _ev _et _ever _v _k _val
+
+      # Ascentlint requires TZ to be set, or it gives a 'time to large/small' error on Ubuntu
+      export TZ="''${TZ:-UTC}"
     fi
   '';
 
@@ -424,7 +427,9 @@
       # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
       # the NFS tool tree), so each --ro-bind shadows the file it targets. The
       # quoted array expansion becomes zero args when no ldRelink binds apply.
-      extraBwrapArgs = [''"''${eda_binds[@]}"''];
+      extraBwrapArgs = [
+        ''"''${eda_binds[@]}"''
+      ];
     });
 
   # Non-hermetic counterpart of `fhs`: the same EDA environment, but built with
