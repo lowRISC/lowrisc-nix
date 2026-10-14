@@ -93,7 +93,7 @@ in
 
       # Shells / core userland the tools shell out to.
       bash
-      coreutils
+      busybox # busybox provides a wider set of utilities than coreutils
       file
       tree
       zip
