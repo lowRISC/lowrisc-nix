@@ -122,6 +122,10 @@
           name = "llvm_cheri";
           packages = with lowrisc_pkgs; [llvm_cheri];
         };
+        llvm_cheri_rvy_0910 = pkgs.mkShell {
+          name = "llvm_cheri_rvy_0910";
+          packages = with lowrisc_pkgs; [llvm_cheri_rvy_0910];
+        };
       };
       formatter = pkgs.alejandra;
     });

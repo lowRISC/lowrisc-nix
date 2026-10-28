@@ -35,8 +35,18 @@
   verilator_5_040 = pkgs.callPackage ./verilator_5_040.nix {};
   verilator_5_048 = pkgs.callPackage ./verilator_5_048.nix {};
 
-  # Cheri
+  # CHERI
   llvm_cheri = pkgs.callPackage ./llvm_cheri.nix {};
+  # Version 0.9.10 of the specification
+  llvm_cheri_rvy_0910 = llvm_cheri.overrideAttrs (_: {
+    version = "20.0.0-rvy-0910-457ae0c4c4a9";
+    src = pkgs.fetchFromGitHub {
+      owner = "Capabilities-Limited";
+      repo = "cheri-alliance-llvm-project";
+      rev = "457ae0c4c4a969882b0c26004920d8bfe51cc395";
+      hash = "sha256-+0Ec4rut3F2JvNtq/HGEXefbIvKCDHHSyP1nPo4Z6mY=";
+    };
+  });
 
   # IT packages
   gcsfuse = pkgs.callPackage ./gcsfuse {};
