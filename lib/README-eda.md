@@ -68,6 +68,26 @@ so no overlay wiring is needed. Arguments:
 | `extraPkgs`    | no       | extra packages added to the FHS env (alias of `extraDeps`)     |
 | `profile`      | no       | bash fragment appended after EDA setup                         |
 
+The returned shell is overridable (`lib.makeOverridable`), so a downstream
+flake can extend another project's shell without restating its arguments, for
+example to add tools to it:
+
+```nix
+devShells.${system}.eda = upstream.devShells.${system}.eda.override (old: {
+  name = "myproject-ext";
+  tools = old.tools ++ builtins.fromJSON (builtins.readFile ./extra_tools.json);
+  profile = (old.profile or "") + ''export BAR=baz'';
+});
+```
+
+`old` holds the arguments the project passed, so an argument it left at its
+default (such as `profile`) may be absent: use `old.<arg> or <default>`. The
+overridden shell's `.app` and `.nonhermetic` are rebuilt from the new arguments.
+
+To read a shell's arguments without rebuilding it, use its `mkEdaShellArgs`
+passthru, which has every argument with defaults filled in, e.g.
+`upstream.devShells.${system}.eda.mkEdaShellArgs.extraPkgs`.
+
 ## Config file contract
 
 Point `LOWRISC_EDA_CONFIG` at a JSON file matching this schema. `home` is the

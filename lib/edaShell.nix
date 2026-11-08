@@ -41,448 +41,456 @@
 # `eval`s config content, so version strings, license values with '@', etc. are
 # safe. Config values are assumed free of embedded newlines/tabs (true for all
 # tool paths, env-var names and license strings).
-{
-  pkgs,
-  lib ? pkgs.lib,
-  # Human-readable shell / FHS pname.
-  name,
-  # Requested tools, as a list of records matching the shared tool-data schema
-  # (the same shape as a project's tool_data.json):
-  #   [ { name = "<tool>"; vendor = "<vendor>"; version = "<version>"; ... } ]
-  # Extra fields (source-url, doc-url, comment, ...) are ignored. Open-source
-  # tools listed here that are absent from the runtime config are simply skipped.
-  tools,
-  # Environment variable naming the runtime config file.
-  configEnvVar ? "LOWRISC_EDA_CONFIG",
-  # Extra packages added to the FHS env (build/runtime deps for the project).
-  extraDeps ? [],
-  extraPkgs ? [],
-  # Project profile fragment, appended after the EDA setup.
-  profile ? "",
-}: let
-  edaFhsPackages = import ./edaFhsPackages.nix {inherit pkgs;};
-  buildFHSEnvOverlay = pkgs.callPackage ./buildFHSEnvOverlay.nix {};
+{pkgs, ...} @ args: let
+  mkEdaShell = {
+    pkgs,
+    lib ? pkgs.lib,
+    # Human-readable shell / FHS pname.
+    name,
+    # Requested tools, as a list of records matching the shared tool-data schema
+    # (the same shape as a project's tool_data.json):
+    #   [ { name = "<tool>"; vendor = "<vendor>"; version = "<version>"; ... } ]
+    # Extra fields (source-url, doc-url, comment, ...) are ignored. Open-source
+    # tools listed here that are absent from the runtime config are simply skipped.
+    tools,
+    # Environment variable naming the runtime config file.
+    configEnvVar ? "LOWRISC_EDA_CONFIG",
+    # Extra packages added to the FHS env (build/runtime deps for the project).
+    extraDeps ? [],
+    extraPkgs ? [],
+    # Project profile fragment, appended after the EDA setup.
+    profile ? "",
+  }: let
+    edaFhsPackages = import ./edaFhsPackages.nix {inherit pkgs;};
+    buildFHSEnvOverlay = pkgs.callPackage ./buildFHSEnvOverlay.nix {};
 
-  # Normalise the tool-data records into {vendor;tool;version;} lookup triples.
-  # vendor/name are lower-cased to match the config's lower-case keys; the
-  # version string is kept verbatim (it is matched against versions.<ver>).
-  requested =
-    map (t: {
-      vendor = lib.toLower t.vendor;
-      tool = lib.toLower t.name;
-      inherit (t) version;
-    })
-    tools;
+    # Normalise the tool-data records into {vendor;tool;version;} lookup triples.
+    # vendor/name are lower-cased to match the config's lower-case keys; the
+    # version string is kept verbatim (it is matched against versions.<ver>).
+    requested =
+      map (t: {
+        vendor = lib.toLower t.vendor;
+        tool = lib.toLower t.name;
+        inherit (t) version;
+      })
+      tools;
 
-  # Baked manifest the runtime script iterates. Vendor/tool/version tokens are
-  # whitespace-free across our tool data, so a space-delimited triple is safe.
-  manifestLines =
-    lib.concatMapStringsSep "\n"
-    (r: ''"${r.vendor} ${r.tool} ${r.version}"'')
-    requested;
+    # Baked manifest the runtime script iterates. Vendor/tool/version tokens are
+    # whitespace-free across our tool data, so a space-delimited triple is safe.
+    manifestLines =
+      lib.concatMapStringsSep "\n"
+      (r: ''"${r.vendor} ${r.tool} ${r.version}"'')
+      requested;
 
-  # Capability implementations the builder knows about (mechanisms, not vendors).
-  # The config only *names* a capability; the actual Nix-store bits come from here.
-  gmpLib = "${lib.getLib pkgs.gmp}/lib/libgmp.so.10";
+    # Capability implementations the builder knows about (mechanisms, not vendors).
+    # The config only *names* a capability; the actual Nix-store bits come from here.
+    gmpLib = "${lib.getLib pkgs.gmp}/lib/libgmp.so.10";
 
-  # System-linker shim for the `ldRelink` capability. Some vendor gcc toolchains
-  # ship a linker too old for modern relative relocations; each bundled linker
-  # named by `ldRelink` is bind-replaced with this shim (see edaBwrapBinds). The
-  # shim execs the FHS `ld` (the unwrapped binutils from edaFhsPackages, on PATH
-  # at /usr/bin/ld inside the sandbox) after dropping the tool's LD_LIBRARY_PATH
-  # so the Nix linker resolves its own libraries via RPATH.
-  ldShim = pkgs.writeShellScript "eda-ld" ''
-    unset LD_LIBRARY_PATH
-    exec /usr/bin/ld "$@"
-  '';
-  jqBin = "${pkgs.jq}/bin/jq";
+    # System-linker shim for the `ldRelink` capability. Some vendor gcc toolchains
+    # ship a linker too old for modern relative relocations; each bundled linker
+    # named by `ldRelink` is bind-replaced with this shim (see edaBwrapBinds). The
+    # shim execs the FHS `ld` (the unwrapped binutils from edaFhsPackages, on PATH
+    # at /usr/bin/ld inside the sandbox) after dropping the tool's LD_LIBRARY_PATH
+    # so the Nix linker resolves its own libraries via RPATH.
+    ldShim = pkgs.writeShellScript "eda-ld" ''
+      unset LD_LIBRARY_PATH
+      exec /usr/bin/ld "$@"
+    '';
+    jqBin = "${pkgs.jq}/bin/jq";
 
-  # Runtime EDA environment setup. Escaping: bash `${...}` is written `''${...}`;
-  # `\t` is passed literally to jq, which emits a real tab in its output.
-  edaProfile = ''
-    # ------------------------------------------------------------------ #
-    # lowRISC generic EDA environment setup (generated by mkEdaShell)     #
-    # ------------------------------------------------------------------ #
-    _eda_cfg="''${${configEnvVar}:-}"
-    if [ -z "$_eda_cfg" ] || [ ! -f "$_eda_cfg" ]; then
-      echo "WARNING: EDA tool config env var ${configEnvVar} ('$_eda_cfg') not set or not found." >&2
-      echo "         No EDA tools configured; base shell tools are still available." >&2
-    else
-      _eda_requested=(
-    ${manifestLines}
-      )
-      _eda_vendors_seen=()
+    # Runtime EDA environment setup. Escaping: bash `${...}` is written `''${...}`;
+    # `\t` is passed literally to jq, which emits a real tab in its output.
+    edaProfile = ''
+      # ------------------------------------------------------------------ #
+      # lowRISC generic EDA environment setup (generated by mkEdaShell)     #
+      # ------------------------------------------------------------------ #
+      _eda_cfg="''${${configEnvVar}:-}"
+      if [ -z "$_eda_cfg" ] || [ ! -f "$_eda_cfg" ]; then
+        echo "WARNING: EDA tool config env var ${configEnvVar} ('$_eda_cfg') not set or not found." >&2
+        echo "         No EDA tools configured; base shell tools are still available." >&2
+      else
+        _eda_requested=(
+      ${manifestLines}
+        )
+        _eda_vendors_seen=()
 
-      # Print PATH with every occurrence of directory $1 removed.
-      _eda_path_without() {
-        local p=":$PATH:"
-        while [[ $p == *":$1:"* ]]; do
-          p=''${p//":$1:"/:}
-        done
-        p=''${p#:}
-        printf '%s' "''${p%:}"
-      }
+        # Print PATH with every occurrence of directory $1 removed.
+        _eda_path_without() {
+          local p=":$PATH:"
+          while [[ $p == *":$1:"* ]]; do
+            p=''${p//":$1:"/:}
+          done
+          p=''${p#:}
+          printf '%s' "''${p%:}"
+        }
 
-      # Prepend directory $1 to PATH, dropping any existing occurrence, so that
-      # re-sourcing the profile (nested `bash -l`, `source /etc/profile`, ...)
-      # leaves PATH unchanged.
-      _eda_path_prepend() {
-        local rest
-        rest=$(_eda_path_without "$1")
-        export PATH="$1''${rest:+:$rest}"
-      }
+        # Prepend directory $1 to PATH, dropping any existing occurrence, so that
+        # re-sourcing the profile (nested `bash -l`, `source /etc/profile`, ...)
+        # leaves PATH unchanged.
+        _eda_path_prepend() {
+          local rest
+          rest=$(_eda_path_without "$1")
+          export PATH="$1''${rest:+:$rest}"
+        }
 
-      # Apply an allowlisted capability for one tool. Mechanisms only — the
-      # config never supplies executable code.
-      _eda_apply_caps() {
-        local v="$1" t="$2" home="$3"
-        local cap exe real wrapdir tmp search
-        cap=$(jq -r --arg v "$v" --arg t "$t" \
-          '.vendors[$v].tools[$t].capabilities.ldPreload // empty' "$_eda_cfg")
-        if [ "$cap" = "gmp" ]; then
-          # Wrap this tool's executables so they LD_PRELOAD the FHS gmp without
-          # perturbing every process in the shared shell. The real binaries are
-          # already on PATH (prepended above), so resolve + shadow them.
-          #
-          # The wrapper dir must be stable and outside /tmp: tools such as Bazel
-          # record the directory a binary was found in and then run actions in
-          # a sandbox with a private /tmp, and a per-shell path would change
-          # PATH (and so invalidate cached results) on every new shell. Key it
-          # on everything the wrapper contents depend on.
-          wrapdir="''${XDG_CACHE_HOME:-$HOME/.cache}/lowrisc-eda/wrappers/$v-$t-$(printf '%s\n' "$home" "${gmpLib}" | sha256sum | cut -c1-16)"
-          mkdir -p "$wrapdir"
-          # Resolve the real binaries with wrapdir removed from PATH, so that a
-          # re-sourced profile (wrapdir already on PATH) cannot generate a
-          # wrapper that execs itself.
-          search=$(_eda_path_without "$wrapdir")
+        # Apply an allowlisted capability for one tool. Mechanisms only — the
+        # config never supplies executable code.
+        _eda_apply_caps() {
+          local v="$1" t="$2" home="$3"
+          local cap exe real wrapdir tmp search
+          cap=$(jq -r --arg v "$v" --arg t "$t" \
+            '.vendors[$v].tools[$t].capabilities.ldPreload // empty' "$_eda_cfg")
+          if [ "$cap" = "gmp" ]; then
+            # Wrap this tool's executables so they LD_PRELOAD the FHS gmp without
+            # perturbing every process in the shared shell. The real binaries are
+            # already on PATH (prepended above), so resolve + shadow them.
+            #
+            # The wrapper dir must be stable and outside /tmp: tools such as Bazel
+            # record the directory a binary was found in and then run actions in
+            # a sandbox with a private /tmp, and a per-shell path would change
+            # PATH (and so invalidate cached results) on every new shell. Key it
+            # on everything the wrapper contents depend on.
+            wrapdir="''${XDG_CACHE_HOME:-$HOME/.cache}/lowrisc-eda/wrappers/$v-$t-$(printf '%s\n' "$home" "${gmpLib}" | sha256sum | cut -c1-16)"
+            mkdir -p "$wrapdir"
+            # Resolve the real binaries with wrapdir removed from PATH, so that a
+            # re-sourced profile (wrapdir already on PATH) cannot generate a
+            # wrapper that execs itself.
+            search=$(_eda_path_without "$wrapdir")
+            while IFS= read -r exe; do
+              [ -z "$exe" ] && continue
+              real=$(PATH="$search" command -v "$exe" 2>/dev/null) || continue
+              # Write then rename so concurrently starting shells never see a
+              # partially written wrapper.
+              tmp=$(mktemp "$wrapdir/.$exe.XXXXXX")
+              {
+                echo '#!/bin/sh'
+                echo "export LD_PRELOAD=${gmpLib}"
+                echo "exec \"$real\" \"\$@\""
+              } > "$tmp"
+              chmod +x "$tmp"
+              mv -f "$tmp" "$wrapdir/$exe"
+            done < <(jq -r --arg v "$v" --arg t "$t" \
+              '(.vendors[$v].tools[$t].executables // [])[]' "$_eda_cfg")
+            _eda_path_prepend "$wrapdir"
+          fi
+        }
+
+        # Configure one tool from the config.
+        _eda_setup_one() {
+          local v="$1" t="$2" ver="$3"
+          local home homeVar userVar d k val req exe
+
+          home=$(jq -r --arg v "$v" --arg t "$t" --arg ver "$ver" \
+            '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
+          if [ -z "$home" ]; then
+            echo "WARNING: EDA tool $v/$t/$ver not present in config; skipping." >&2
+            return 0
+          fi
+
+          homeVar=$(jq -r --arg v "$v" --arg t "$t" \
+            '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
+
+          # Allow a user to override the install directory via USER_<HOMEVAR>.
+          if [ -n "$homeVar" ]; then
+            userVar="USER_$homeVar"
+            if [ -n "''${!userVar:-}" ]; then
+              echo "$homeVar taken from the user environment via $userVar."
+              home="''${!userVar}"
+            fi
+          fi
+
+          if [ ! -d "$home" ]; then
+            echo "WARNING: EDA tool $v/$t home ($home) does not exist; skipping." >&2
+            return 0
+          fi
+
+          [ -n "$homeVar" ] && export "$homeVar=$home"
+
+          # pathDirs: prepend $home/<dir> to PATH (default ["bin"]).
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            _eda_path_prepend "$home/$d"
+          done < <(jq -r --arg v "$v" --arg t "$t" \
+            '(.vendors[$v].tools[$t].pathDirs // ["bin"])[]' "$_eda_cfg")
+
+          # extraEnvVars: literal VAR=value. Read as data, never eval.
+          while IFS="$(printf '\t')" read -r k val; do
+            [ -z "$k" ] && continue
+            export "$k=$val"
+          done < <(jq -r --arg v "$v" --arg t "$t" \
+            '(.vendors[$v].tools[$t].extraEnvVars // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
+
+          # extraPaths: VAR gets $home/<subdir> prepended.
+          while IFS="$(printf '\t')" read -r k val; do
+            [ -z "$k" ] && continue
+            export "$k=$home/$val''${!k:+:''${!k}}"
+          done < <(jq -r --arg v "$v" --arg t "$t" \
+            '(.vendors[$v].tools[$t].extraPaths // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
+
+          _eda_apply_caps "$v" "$t" "$home"
+
+          # Warn if a declared companion tool is not part of this shell.
+          while IFS= read -r req; do
+            [ -z "$req" ] && continue
+            if ! printf '%s\n' "''${_eda_requested[@]}" | grep -q " $req "; then
+              echo "WARNING: $v/$t requires '$req', which is not in this shell's tool set." >&2
+            fi
+          done < <(jq -r --arg v "$v" --arg t "$t" \
+            '(.vendors[$v].tools[$t].requires // [])[]' "$_eda_cfg")
+
+          # Non-fatal sanity check: each executable should resolve on the new PATH.
           while IFS= read -r exe; do
             [ -z "$exe" ] && continue
-            real=$(PATH="$search" command -v "$exe" 2>/dev/null) || continue
-            # Write then rename so concurrently starting shells never see a
-            # partially written wrapper.
-            tmp=$(mktemp "$wrapdir/.$exe.XXXXXX")
-            {
-              echo '#!/bin/sh'
-              echo "export LD_PRELOAD=${gmpLib}"
-              echo "exec \"$real\" \"\$@\""
-            } > "$tmp"
-            chmod +x "$tmp"
-            mv -f "$tmp" "$wrapdir/$exe"
+            if ! command -v "$exe" >/dev/null 2>&1; then
+              echo "WARNING: executable '$exe' for $v/$t not found after PATH setup." >&2
+            fi
           done < <(jq -r --arg v "$v" --arg t "$t" \
             '(.vendors[$v].tools[$t].executables // [])[]' "$_eda_cfg")
-          _eda_path_prepend "$wrapdir"
-        fi
-      }
 
-      # Configure one tool from the config.
-      _eda_setup_one() {
-        local v="$1" t="$2" ver="$3"
-        local home homeVar userVar d k val req exe
-
-        home=$(jq -r --arg v "$v" --arg t "$t" --arg ver "$ver" \
-          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
-        if [ -z "$home" ]; then
-          echo "WARNING: EDA tool $v/$t/$ver not present in config; skipping." >&2
-          return 0
-        fi
-
-        homeVar=$(jq -r --arg v "$v" --arg t "$t" \
-          '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
-
-        # Allow a user to override the install directory via USER_<HOMEVAR>.
-        if [ -n "$homeVar" ]; then
-          userVar="USER_$homeVar"
-          if [ -n "''${!userVar:-}" ]; then
-            echo "$homeVar taken from the user environment via $userVar."
-            home="''${!userVar}"
-          fi
-        fi
-
-        if [ ! -d "$home" ]; then
-          echo "WARNING: EDA tool $v/$t home ($home) does not exist; skipping." >&2
-          return 0
-        fi
-
-        [ -n "$homeVar" ] && export "$homeVar=$home"
-
-        # pathDirs: prepend $home/<dir> to PATH (default ["bin"]).
-        while IFS= read -r d; do
-          [ -z "$d" ] && continue
-          _eda_path_prepend "$home/$d"
-        done < <(jq -r --arg v "$v" --arg t "$t" \
-          '(.vendors[$v].tools[$t].pathDirs // ["bin"])[]' "$_eda_cfg")
-
-        # extraEnvVars: literal VAR=value. Read as data, never eval.
-        while IFS="$(printf '\t')" read -r k val; do
-          [ -z "$k" ] && continue
-          export "$k=$val"
-        done < <(jq -r --arg v "$v" --arg t "$t" \
-          '(.vendors[$v].tools[$t].extraEnvVars // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
-
-        # extraPaths: VAR gets $home/<subdir> prepended.
-        while IFS="$(printf '\t')" read -r k val; do
-          [ -z "$k" ] && continue
-          export "$k=$home/$val''${!k:+:''${!k}}"
-        done < <(jq -r --arg v "$v" --arg t "$t" \
-          '(.vendors[$v].tools[$t].extraPaths // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
-
-        _eda_apply_caps "$v" "$t" "$home"
-
-        # Warn if a declared companion tool is not part of this shell.
-        while IFS= read -r req; do
-          [ -z "$req" ] && continue
-          if ! printf '%s\n' "''${_eda_requested[@]}" | grep -q " $req "; then
-            echo "WARNING: $v/$t requires '$req', which is not in this shell's tool set." >&2
-          fi
-        done < <(jq -r --arg v "$v" --arg t "$t" \
-          '(.vendors[$v].tools[$t].requires // [])[]' "$_eda_cfg")
-
-        # Non-fatal sanity check: each executable should resolve on the new PATH.
-        while IFS= read -r exe; do
-          [ -z "$exe" ] && continue
-          if ! command -v "$exe" >/dev/null 2>&1; then
-            echo "WARNING: executable '$exe' for $v/$t not found after PATH setup." >&2
-          fi
-        done < <(jq -r --arg v "$v" --arg t "$t" \
-          '(.vendors[$v].tools[$t].executables // [])[]' "$_eda_cfg")
-
-        _eda_vendors_seen+=("$v")
-      }
-
-      for _entry in "''${_eda_requested[@]}"; do
-        # Split into fields without touching the shell's positional parameters
-        # ($@ is later used by the FHS env init to exec the shell/command).
-        read -r _ev _et _ever <<< "$_entry"
-        _eda_setup_one "$_ev" "$_et" "$_ever"
-      done
-
-      # Export each seen vendor's license vars once (only vendors that resolved).
-      while IFS= read -r _v; do
-        [ -z "$_v" ] && continue
-        while IFS="$(printf '\t')" read -r _k _val; do
-          [ -z "$_k" ] && continue
-          export "$_k=$_val"
-        done < <(jq -r --arg v "$_v" \
-          '(.vendors[$v].license.envVars // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
-      done < <(printf '%s\n' "''${_eda_vendors_seen[@]}" | sort -u)
-
-      unset -f _eda_setup_one _eda_apply_caps _eda_path_without _eda_path_prepend
-      unset _eda_cfg _eda_requested _eda_vendors_seen _entry _ev _et _ever _v _k _val
-
-      # Ascentlint requires TZ to be set, or it gives a 'time to large/small' error on Ubuntu
-      export TZ="''${TZ:-UTC}"
-    fi
-  '';
-
-  # `ldRelink` capability, hermetic edition. This runs in the FHS launcher
-  # *outside* the bubblewrap sandbox (buildFHSEnv's `extraPreBwrapCmds` hook), so
-  # it may read the runtime config and resolve site paths / globs on the real
-  # host filesystem — exactly what the profile cannot do. For each requested tool
-  # it collects the bundled linkers named by `ldRelink` into the `eda_binds`
-  # array as `--ro-bind <shim> <bundled-ld>` pairs. bwrap then applies those
-  # binds from outside the sandbox (no in-sandbox mount privileges needed), which
-  # is what keeps this hermetic. The array is spliced into the bwrap invocation
-  # via `extraBwrapArgs` below.
-  #
-  # Home resolution mirrors the profile: config `home`, overridden by
-  # USER_<homeVar> if the user exported it (the homeVar itself is only exported
-  # later, inside the sandbox, so it is not consulted here).
-  edaBwrapBinds = ''
-    eda_binds=()
-    _eda_cfg="''${${configEnvVar}:-}"
-    if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
-      _eda_relink=(
-    ${manifestLines}
-      )
-      for _entry in "''${_eda_relink[@]}"; do
-        read -r _v _t _ver <<< "$_entry"
-        _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
-          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
-        _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
-          '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
-        if [ -n "$_hv" ]; then
-          _uv="USER_$_hv"
-          [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
-        fi
-        [ -z "$_home" ] && continue
-        while IFS= read -r _glob; do
-          [ -z "$_glob" ] && continue
-          for _f in "$_home"/$_glob; do
-            [ -e "$_f" ] && eda_binds+=(--ro-bind ${ldShim} "$_f")
-          done
-        done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
-          '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
-      done
-    fi
-  '';
-
-  # Bind the host's real /etc/os-release into the hermetic sandbox. nixpkgs
-  # otherwise symlinks it to /.host-etc/os-release, which dangles on hosts where
-  # it is itself a relative symlink (e.g. Ubuntu: ../usr/lib/os-release resolves
-  # into the FHS /usr). Resolving it here, on the real host, avoids that. Adding
-  # it to `etc_ignored` makes nixpkgs skip its own symlink for this entry.
-  # Falls back to the default behaviour if the host file cannot be resolved.
-  osReleaseBind = ''
-    if _osr=$(${pkgs.coreutils}/bin/readlink -f /etc/os-release) && [ -f "$_osr" ]; then
-      ro_mounts+=(--ro-bind "$_osr" /etc/os-release)
-      etc_ignored+=(/etc/os-release)
-    fi
-    unset _osr
-  '';
-
-  # `ldRelink` capability for the overlay sandbox. Same intent as edaBwrapBinds,
-  # but expressed as a buildFHSEnvOverlay `preExecHook`: it runs *inside* the
-  # overlay's mount namespace (after the host tool tree is bound back at its
-  # original paths) where the `bind` helper is available, so each bundled linker
-  # named by `ldRelink` is rbind-replaced with the FHS `ld` shim. Mirrors
-  # edaBwrapBinds' home resolution (config `home`, overridden by USER_<homeVar>).
-  edaOverlayBinds = ''
-    _eda_cfg="''${${configEnvVar}:-}"
-    if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
-      _eda_relink=(
-    ${manifestLines}
-      )
-      for _entry in "''${_eda_relink[@]}"; do
-        read -r _v _t _ver <<< "$_entry"
-        _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
-          '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
-        _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
-          '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
-        if [ -n "$_hv" ]; then
-          _uv="USER_$_hv"
-          [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
-        fi
-        [ -z "$_home" ] && continue
-        while IFS= read -r _glob; do
-          [ -z "$_glob" ] && continue
-          for _f in "$_home"/$_glob; do
-            [ -e "$_f" ] && bind ${ldShim} "$_f"
-          done
-        done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
-          '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
-      done
-    fi
-  '';
-
-  # Parent-shell detection. Runs *outside* bwrap (in the nix develop shellHook
-  # or the `apps.<name>` launcher) — inside the sandbox `$PPID` refers to the
-  # FHS init, not the invoking terminal, so this must happen before exec'ing
-  # the FHS wrapper. Newer nix sets `$SHELL` to a non-interactive bash; we
-  # override it with the real parent (bash/fish/zsh) so the dispatcher's
-  # no-args branch lands the user in their real interactive shell.
-  detectParentShell = ''
-    parent_shell=$(${pkgs.coreutils}/bin/readlink /proc/$PPID/exe)
-    case "$parent_shell" in
-      *bash | *fish | *zsh)
-        export SHELL="$parent_shell"
-        ;;
-      *)
-        unset SHELL
-        ;;
-    esac
-  '';
-
-  # Outside-sandbox launcher for a given FHS env (`fhsEnv`). Shared by both
-  # entry points (`nix develop`'s shellHook and the `apps.<name>` payload) and
-  # both the hermetic and overlay envs. Parent-shell detection must happen out
-  # here: inside the sandbox $PPID is the FHS init, not the invoking terminal.
-  # Argv is forwarded through, so `nix run .# -- cmd arg1 arg2` reaches
-  # `exec "$@"` inside the dispatcher.
-  mkLauncher = fhsEnv:
-    pkgs.writeShellScript "${name}-launcher" ''
-      ${detectParentShell}
-      exec ${lib.getExe fhsEnv} "$@"
-    '';
-
-  # Dispatcher used as the FHS `runScript`. With no args, drops into the
-  # user's interactive `$SHELL` (unchanged `nix develop` UX). With args, execs
-  # them as argv inside the sandbox — no `bash -c` string, so quoting/globs/
-  # env-var expansion happen exactly as the caller intended. This is what
-  # makes `nix run .#<app> -- cmd arg1 arg2` behave like a normal exec.
-  runDispatch = pkgs.writeShellScript "${name}-dispatch" ''
-    if [ $# -eq 0 ]; then
-      exec "''${SHELL:-bash}"
-    else
-      exec "$@"
-    fi
-  '';
-
-  # Builder-agnostic EDA env arguments, shared by the hermetic and overlay FHS
-  # sandboxes below. Each builder merges in its own variant-specific args (the
-  # `ldRelink` mechanism in particular differs between the two).
-  commonFhsArgs = {
-    pname = name;
-    version = "eda";
-    targetPkgs = _: edaFhsPackages ++ extraDeps ++ extraPkgs;
-    extraOutputsToInstall = ["dev"];
-    multiArch = true;
-    runScript = "${runDispatch}";
-    profile = edaProfile + "\n" + profile;
-  };
-
-  # Upstream nixpkgs buildFHSEnv (bubblewrap-based) sandbox
-  fhs = pkgs.buildFHSEnv (commonFhsArgs
-    // {
-      extraPreBwrapCmds = osReleaseBind + edaBwrapBinds;
-      # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
-      # the NFS tool tree), so each --ro-bind shadows the file it targets. The
-      # quoted array expansion becomes zero args when no ldRelink binds apply.
-      extraBwrapArgs = [
-        ''"''${eda_binds[@]}"''
-      ];
-    });
-
-  # Non-hermetic counterpart of `fhs`: the same EDA environment, but built with
-  # the overlay FHS sandbox (buildFHSEnvOverlay).
-  # `meta.mainProgram` is set explicitly because, unlike buildFHSEnv, the overlay
-  # builder does not default it (needed for `lib.getExe fhsOverlay`).
-  fhsOverlay = buildFHSEnvOverlay (commonFhsArgs
-    // {
-      meta.mainProgram = name;
-      preExecHook = edaOverlayBinds;
-    });
-
-  # Wrapper derivation exposed to consumers.
-  mkShellWrapper = {
-    drvName ? name,
-    launcher,
-    extraPassthru ? {},
-  }:
-    pkgs.runCommandLocal drvName {
-      shellHook = ''
-        exec ${launcher}
-      '';
-      passthru =
-        {
-          # Flake apps payload: run this shell non-interactively. Use as:
-          #   apps.<myapp> = (mkEdaShell { ... }).app;
-          # then `nix run .# -- cmd arg1 arg2` execs `cmd arg1 arg2` inside the
-          # sandbox with the EDA env fully set up (profile still runs before the
-          # dispatcher). With no args after `--` you get the interactive `$SHELL`,
-          # matching `nix develop`.
-          app = {
-            type = "app";
-            program = "${launcher}";
-          };
+          _eda_vendors_seen+=("$v")
         }
-        // extraPassthru;
-    } ''
-      echo >&2 ""
-      echo >&2 "*** mkEdaShell environments are intended for interactive nix develop / nix-shell sessions, not for building! ***"
-      echo >&2 ""
-      exit 1
+
+        for _entry in "''${_eda_requested[@]}"; do
+          # Split into fields without touching the shell's positional parameters
+          # ($@ is later used by the FHS env init to exec the shell/command).
+          read -r _ev _et _ever <<< "$_entry"
+          _eda_setup_one "$_ev" "$_et" "$_ever"
+        done
+
+        # Export each seen vendor's license vars once (only vendors that resolved).
+        while IFS= read -r _v; do
+          [ -z "$_v" ] && continue
+          while IFS="$(printf '\t')" read -r _k _val; do
+            [ -z "$_k" ] && continue
+            export "$_k=$_val"
+          done < <(jq -r --arg v "$_v" \
+            '(.vendors[$v].license.envVars // {}) | to_entries[] | "\(.key)\t\(.value)"' "$_eda_cfg")
+        done < <(printf '%s\n' "''${_eda_vendors_seen[@]}" | sort -u)
+
+        unset -f _eda_setup_one _eda_apply_caps _eda_path_without _eda_path_prepend
+        unset _eda_cfg _eda_requested _eda_vendors_seen _entry _ev _et _ever _v _k _val
+
+        # Ascentlint requires TZ to be set, or it gives a 'time to large/small' error on Ubuntu
+        export TZ="''${TZ:-UTC}"
+      fi
     '';
 
-  # Non-hermetic devShell wrapper (overlay FHS). Exposed on the default output
-  # as `.nonhermetic` so consumers can offer it as a separate devShell / app:
-  #   devShells.<name>-nonhermetic = (mkEdaShell { ... }).nonhermetic;
-  #   apps.<name>-nonhermetic      = (mkEdaShell { ... }).nonhermetic.app;
-  nonhermeticShell = mkShellWrapper {
-    drvName = "${name}-nonhermetic";
-    launcher = mkLauncher fhsOverlay;
-  };
+    # `ldRelink` capability, hermetic edition. This runs in the FHS launcher
+    # *outside* the bubblewrap sandbox (buildFHSEnv's `extraPreBwrapCmds` hook), so
+    # it may read the runtime config and resolve site paths / globs on the real
+    # host filesystem — exactly what the profile cannot do. For each requested tool
+    # it collects the bundled linkers named by `ldRelink` into the `eda_binds`
+    # array as `--ro-bind <shim> <bundled-ld>` pairs. bwrap then applies those
+    # binds from outside the sandbox (no in-sandbox mount privileges needed), which
+    # is what keeps this hermetic. The array is spliced into the bwrap invocation
+    # via `extraBwrapArgs` below.
+    #
+    # Home resolution mirrors the profile: config `home`, overridden by
+    # USER_<homeVar> if the user exported it (the homeVar itself is only exported
+    # later, inside the sandbox, so it is not consulted here).
+    edaBwrapBinds = ''
+      eda_binds=()
+      _eda_cfg="''${${configEnvVar}:-}"
+      if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
+        _eda_relink=(
+      ${manifestLines}
+        )
+        for _entry in "''${_eda_relink[@]}"; do
+          read -r _v _t _ver <<< "$_entry"
+          _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
+            '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
+          _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+            '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
+          if [ -n "$_hv" ]; then
+            _uv="USER_$_hv"
+            [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
+          fi
+          [ -z "$_home" ] && continue
+          while IFS= read -r _glob; do
+            [ -z "$_glob" ] && continue
+            for _f in "$_home"/$_glob; do
+              [ -e "$_f" ] && eda_binds+=(--ro-bind ${ldShim} "$_f")
+            done
+          done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+            '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
+        done
+      fi
+    '';
+
+    # Bind the host's real /etc/os-release into the hermetic sandbox. nixpkgs
+    # otherwise symlinks it to /.host-etc/os-release, which dangles on hosts where
+    # it is itself a relative symlink (e.g. Ubuntu: ../usr/lib/os-release resolves
+    # into the FHS /usr). Resolving it here, on the real host, avoids that. Adding
+    # it to `etc_ignored` makes nixpkgs skip its own symlink for this entry.
+    # Falls back to the default behaviour if the host file cannot be resolved.
+    osReleaseBind = ''
+      if _osr=$(${pkgs.coreutils}/bin/readlink -f /etc/os-release) && [ -f "$_osr" ]; then
+        ro_mounts+=(--ro-bind "$_osr" /etc/os-release)
+        etc_ignored+=(/etc/os-release)
+      fi
+      unset _osr
+    '';
+
+    # `ldRelink` capability for the overlay sandbox. Same intent as edaBwrapBinds,
+    # but expressed as a buildFHSEnvOverlay `preExecHook`: it runs *inside* the
+    # overlay's mount namespace (after the host tool tree is bound back at its
+    # original paths) where the `bind` helper is available, so each bundled linker
+    # named by `ldRelink` is rbind-replaced with the FHS `ld` shim. Mirrors
+    # edaBwrapBinds' home resolution (config `home`, overridden by USER_<homeVar>).
+    edaOverlayBinds = ''
+      _eda_cfg="''${${configEnvVar}:-}"
+      if [ -n "$_eda_cfg" ] && [ -f "$_eda_cfg" ]; then
+        _eda_relink=(
+      ${manifestLines}
+        )
+        for _entry in "''${_eda_relink[@]}"; do
+          read -r _v _t _ver <<< "$_entry"
+          _home=$(${jqBin} -r --arg v "$_v" --arg t "$_t" --arg ver "$_ver" \
+            '.vendors[$v].tools[$t].versions[$ver].home // empty' "$_eda_cfg")
+          _hv=$(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+            '.vendors[$v].tools[$t].homeVar // empty' "$_eda_cfg")
+          if [ -n "$_hv" ]; then
+            _uv="USER_$_hv"
+            [ -n "''${!_uv:-}" ] && _home="''${!_uv}"
+          fi
+          [ -z "$_home" ] && continue
+          while IFS= read -r _glob; do
+            [ -z "$_glob" ] && continue
+            for _f in "$_home"/$_glob; do
+              [ -e "$_f" ] && bind ${ldShim} "$_f"
+            done
+          done < <(${jqBin} -r --arg v "$_v" --arg t "$_t" \
+            '(.vendors[$v].tools[$t].capabilities.ldRelink // [])[]' "$_eda_cfg")
+        done
+      fi
+    '';
+
+    # Parent-shell detection. Runs *outside* bwrap (in the nix develop shellHook
+    # or the `apps.<name>` launcher) — inside the sandbox `$PPID` refers to the
+    # FHS init, not the invoking terminal, so this must happen before exec'ing
+    # the FHS wrapper. Newer nix sets `$SHELL` to a non-interactive bash; we
+    # override it with the real parent (bash/fish/zsh) so the dispatcher's
+    # no-args branch lands the user in their real interactive shell.
+    detectParentShell = ''
+      parent_shell=$(${pkgs.coreutils}/bin/readlink /proc/$PPID/exe)
+      case "$parent_shell" in
+        *bash | *fish | *zsh)
+          export SHELL="$parent_shell"
+          ;;
+        *)
+          unset SHELL
+          ;;
+      esac
+    '';
+
+    # Outside-sandbox launcher for a given FHS env (`fhsEnv`). Shared by both
+    # entry points (`nix develop`'s shellHook and the `apps.<name>` payload) and
+    # both the hermetic and overlay envs. Parent-shell detection must happen out
+    # here: inside the sandbox $PPID is the FHS init, not the invoking terminal.
+    # Argv is forwarded through, so `nix run .# -- cmd arg1 arg2` reaches
+    # `exec "$@"` inside the dispatcher.
+    mkLauncher = fhsEnv:
+      pkgs.writeShellScript "${name}-launcher" ''
+        ${detectParentShell}
+        exec ${lib.getExe fhsEnv} "$@"
+      '';
+
+    # Dispatcher used as the FHS `runScript`. With no args, drops into the
+    # user's interactive `$SHELL` (unchanged `nix develop` UX). With args, execs
+    # them as argv inside the sandbox — no `bash -c` string, so quoting/globs/
+    # env-var expansion happen exactly as the caller intended. This is what
+    # makes `nix run .#<app> -- cmd arg1 arg2` behave like a normal exec.
+    runDispatch = pkgs.writeShellScript "${name}-dispatch" ''
+      if [ $# -eq 0 ]; then
+        exec "''${SHELL:-bash}"
+      else
+        exec "$@"
+      fi
+    '';
+
+    # Builder-agnostic EDA env arguments, shared by the hermetic and overlay FHS
+    # sandboxes below. Each builder merges in its own variant-specific args (the
+    # `ldRelink` mechanism in particular differs between the two).
+    commonFhsArgs = {
+      pname = name;
+      version = "eda";
+      targetPkgs = _: edaFhsPackages ++ extraDeps ++ extraPkgs;
+      extraOutputsToInstall = ["dev"];
+      multiArch = true;
+      runScript = "${runDispatch}";
+      profile = edaProfile + "\n" + profile;
+    };
+
+    # Upstream nixpkgs buildFHSEnv (bubblewrap-based) sandbox
+    fhs = pkgs.buildFHSEnv (commonFhsArgs
+      // {
+        extraPreBwrapCmds = osReleaseBind + edaBwrapBinds;
+        # Spliced verbatim into the bwrap command *after* the host auto-mounts (e.g.
+        # the NFS tool tree), so each --ro-bind shadows the file it targets. The
+        # quoted array expansion becomes zero args when no ldRelink binds apply.
+        extraBwrapArgs = [
+          ''"''${eda_binds[@]}"''
+        ];
+      });
+
+    # Non-hermetic counterpart of `fhs`: the same EDA environment, but built with
+    # the overlay FHS sandbox (buildFHSEnvOverlay).
+    # `meta.mainProgram` is set explicitly because, unlike buildFHSEnv, the overlay
+    # builder does not default it (needed for `lib.getExe fhsOverlay`).
+    fhsOverlay = buildFHSEnvOverlay (commonFhsArgs
+      // {
+        meta.mainProgram = name;
+        preExecHook = edaOverlayBinds;
+      });
+
+    # Wrapper derivation exposed to consumers.
+    mkShellWrapper = {
+      drvName ? name,
+      launcher,
+      extraPassthru ? {},
+    }:
+      pkgs.runCommandLocal drvName {
+        shellHook = ''
+          exec ${launcher}
+        '';
+        passthru =
+          {
+            # Flake apps payload: run this shell non-interactively. Use as:
+            #   apps.<myapp> = (mkEdaShell { ... }).app;
+            # then `nix run .# -- cmd arg1 arg2` execs `cmd arg1 arg2` inside the
+            # sandbox with the EDA env fully set up (profile still runs before the
+            # dispatcher). With no args after `--` you get the interactive `$SHELL`,
+            # matching `nix develop`.
+            app = {
+              type = "app";
+              program = "${launcher}";
+            };
+          }
+          // extraPassthru;
+      } ''
+        echo >&2 ""
+        echo >&2 "*** mkEdaShell environments are intended for interactive nix develop / nix-shell sessions, not for building! ***"
+        echo >&2 ""
+        exit 1
+      '';
+
+    # Non-hermetic devShell wrapper (overlay FHS). Exposed on the default output
+    # as `.nonhermetic` so consumers can offer it as a separate devShell / app:
+    #   devShells.<name>-nonhermetic = (mkEdaShell { ... }).nonhermetic;
+    #   apps.<name>-nonhermetic      = (mkEdaShell { ... }).nonhermetic.app;
+    nonhermeticShell = mkShellWrapper {
+      drvName = "${name}-nonhermetic";
+      launcher = mkLauncher fhsOverlay;
+    };
+  in
+    mkShellWrapper {
+      launcher = mkLauncher fhs;
+      extraPassthru = {
+        nonhermetic = nonhermeticShell;
+        # The arguments this shell was built from, defaults filled in, so a
+        # downstream flake can read them (e.g. `shell.mkEdaShellArgs.extraPkgs`).
+        mkEdaShellArgs = {inherit pkgs name tools configEnvVar extraDeps extraPkgs profile;};
+      };
+    };
 in
-  mkShellWrapper {
-    launcher = mkLauncher fhs;
-    extraPassthru = {nonhermetic = nonhermeticShell;};
-  }
+  pkgs.lib.makeOverridable mkEdaShell args
